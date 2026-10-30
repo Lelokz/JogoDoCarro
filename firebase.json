@@ -1,0 +1,12 @@
+{
+  "hosting": {
+    "public": "site",
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      {
+        "source": "**/*.@(wasm|pck)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      }
+    ]
+  }
+}

@@ -39,6 +39,15 @@ func _ready() -> void:
 	caixa.add_child(botao("Treinar sozinho", func() -> void: Rede.treinar()))
 	caixa.add_child(botao("Campo de teste", func() -> void: Rede.treinar("res://cenas/campo_teste.tscn")))
 	caixa.add_child(HSeparator.new())
+	if OS.has_feature("web"):
+		# no navegador essa conexão não funciona: as salas com código vêm no próximo passo
+		var em_breve := Label.new()
+		em_breve.text = "Jogar com amigos pelo navegador: em breve (salas com código)"
+		em_breve.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		em_breve.add_theme_color_override("font_color", Color(0.6, 0.63, 0.7))
+		caixa.add_child(em_breve)
+		montar_aviso(caixa)
+		return
 	caixa.add_child(botao("Hospedar partida", hospedar))
 	var linha := HBoxContainer.new()
 	endereco.placeholder_text = "endereço do host (ex.: 192.168.0.10)"
@@ -50,13 +59,7 @@ func _ready() -> void:
 	caixa.add_child(linha)
 	caixa.add_child(HSeparator.new())
 	caixa.add_child(botao("Sair do jogo", func() -> void: get_tree().quit()))
-
-	aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	aviso.add_theme_color_override("font_color", Color(1.0, 0.75, 0.4))
-	caixa.add_child(aviso)
-	aviso.text = Rede.aviso
-	Rede.aviso = ""
+	montar_aviso(caixa)
 	if FileAccess.file_exists(ULTIMO_ENDERECO):
 		endereco.text = FileAccess.get_file_as_string(ULTIMO_ENDERECO).strip_edges()
 
@@ -70,6 +73,15 @@ func _ready() -> void:
 		elif argumento.begins_with("--entrar="):
 			endereco.text = argumento.trim_prefix("--entrar=")
 			entrar.call_deferred()
+
+
+func montar_aviso(caixa: VBoxContainer) -> void:
+	aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	aviso.add_theme_color_override("font_color", Color(1.0, 0.75, 0.4))
+	caixa.add_child(aviso)
+	aviso.text = Rede.aviso
+	Rede.aviso = ""
 
 
 func botao(texto: String, ao_clicar: Callable) -> Button:
