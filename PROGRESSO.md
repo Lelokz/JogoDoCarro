@@ -26,6 +26,7 @@ Números de partida conferidos no código do RocketSim (simulação aberta da f�
 - Câmera no ar segue pra onde o carro vai (senão girava junto no mortal).
 - Botões: Espaço / botão direito / A = pulo · botão esquerdo / Ctrl / B = boost · Q/E ou LB/RB = rolar.
 - `./testar.sh` agora roda os dois testes (chão e ar).
+- Tu testou: "ficou legal".
 
 ## 30/10/2026: drift com transição
 - Tu sentiu: soltando o Shift, o drift parava na hora e o carro voltava ao normal de uma vez.
