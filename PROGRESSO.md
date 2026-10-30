@@ -15,6 +15,7 @@ Diário do projeto. O mais novo fica em cima.
   Na saída do drift o carro também **endireita sozinho** pra onde está indo, em vez de só frear de lado.
   Resultado: o deslize some ao longo de ~0,5 s e o carro guarda mais velocidade.
 - Duas barrinhas novas no F1: "Volta da aderência" e "Endireitar na saída do drift".
+- Tu testou: "ficou bem melhor". Valores de partida mantidos (0,6 s / endireitar 2).
 
 ## 30/10/2026 (madrugada): Etapa 2, suspensão + painel F1
 - Tu testou a etapa 1: "ficou legal". Pediu FOV menor.
