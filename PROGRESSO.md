@@ -9,6 +9,23 @@ Diário do projeto. O mais novo fica em cima.
 - `./editor.sh`: abre o projeto no editor do Godot
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
+- **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica; `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
+
+## 30/10/2026: o jogo no navegador (passo 1 de "jogar pela internet sem baixar nada")
+- Decidido contigo: **tudo de graça**. Site no Firebase Hosting; salas com código; os navegadores conversam
+  direto (WebRTC) e o Firebase só faz o "aperto de mão"; STUN do Google + TURN grátis do ExpressTURN
+  (mesma receita do Loft). Servidor alugado: fora.
+- Projeto Firebase: **rocketwar-2a302**, na tua outra conta Google. A pasta do jogo usa só essa conta
+  (`firebase login:use`); Loft e Jarvis continuam com a deles.
+- Modelos de exportação do Godot: baixei o pacote (1,28 GB, conferido), tirei só os 2 da web (20 MB) pra
+  `Godot/modelos` e apaguei o resto.
+- Versão web "sem threads" (roda em qualquer site, sem cabeçalho especial). Gráfico no modo compatível
+  (WebGL 2). O arquivo principal tem 39 MB e chega comprimido com **7 MB**.
+- No navegador o "Hospedar/Entrar" de agora não funciona (o navegador não deixa esse tipo de conexão):
+  aparece "em breve (salas com código)". Treinar sozinho e campo de teste funcionam.
+- Testado num Chromium sem janela, no site publicado: menu, treino, arena, contagem, carro andando.
+  Esse navegador de teste não tem placa de vídeo e roda devagar; **falta tu ver se no teu fica liso.**
+- **Próximo:** salas com código + WebRTC (passo 2). **Depois: gráficos melhores** (pedido teu).
 
 ## 30/10/2026: Etapa 7 (parte 1), esconder o atraso da internet
 - Tu pediu só isso por agora (versão Windows e conexão pela internet depois; **Tailscale não**).
