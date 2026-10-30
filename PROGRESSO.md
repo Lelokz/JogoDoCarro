@@ -9,7 +9,26 @@ Diário do projeto. O mais novo fica em cima.
 - `./editor.sh`: abre o projeto no editor do Godot
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
-- **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica; `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
+- **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
+
+## 30/10/2026: salas com código no site (passo 2 de "jogar pela internet sem baixar nada")
+- Tu ativou o **Realtime Database** no rocketwar-2a302 (modo bloqueado). As regras ficam em
+  `regras_banco.json` e são publicadas junto com o site: só deixam gravar recados de sala no formato
+  certo, ninguém consegue listar as salas, e qualquer outra coisa no banco é recusada (conferido com curl).
+- **Como funciona:** no menu do site, **"Criar sala"** abre a arena e mostra um código de 4 letras no
+  canto de cima (ex.: SALA QBUG). O amigo digita o código e clica em **"Entrar na sala"**, ou abre o link
+  direto, tipo `rocketwar-2a302.web.app/?sala=QBUG` (o **L** copia esse link na tela de quem hospeda).
+  - O banco é só um quadro de recados pro "aperto de mão" (`scripts/sala.gd`). Depois que conecta, os
+    navegadores conversam direto (WebRTC) e o banco não é mais usado. Quando o host aperta ESC, a sala é
+    apagada do banco.
+  - Avisos no menu: sala que não existe, sala cheia (6), host não respondeu, "o host fechou a partida".
+  - No PC (`./jogar.sh`) continua o Hospedar/Entrar pelo endereço de antes.
+- Testado com **dois navegadores separados** no meu PC: o amigo entrou pelo link e conectou em ~2 s,
+  ficou no Laranja e dirigiu; o placar e o relógio iguais nas duas telas; o host saiu e o amigo voltou
+  pro menu com aviso; um código errado dá "a sala não existe".
+- **Falta:** testar com um amigo de verdade, em outra casa. Por enquanto só tem STUN (o "descobridor de
+  endereço" do Google). Em algumas internets (4G, alguns provedores) isso não basta e precisa de um
+  **TURN** (um repetidor). O ExpressTURN é grátis; falta decidir qual conta usar.
 
 ## 30/10/2026: carregamento rápido no navegador + boost sem Ctrl
 - Tu viu no site: "Treinar sozinho" travava ~20 s antes de abrir; e a aba fechou do nada jogando.

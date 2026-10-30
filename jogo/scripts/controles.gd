@@ -23,6 +23,7 @@ func _ready() -> void:
 	adicionar("tela_cheia", [KEY_F11], [], [])
 	adicionar("painel", [KEY_F1], [], [])
 	adicionar("trocar_mapa", [KEY_F2], [], [])
+	adicionar("copiar_link", [KEY_L], [], [])
 	adicionar("menu", [KEY_ESCAPE], [JOY_BUTTON_START], [])
 
 

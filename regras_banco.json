@@ -1,0 +1,45 @@
+{
+  "rules": {
+    "salas": {
+      "$codigo": {
+        ".read": true,
+        ".write": true,
+        ".validate": "$codigo.matches(/^[A-Z]{4}$/)",
+        "host": {
+          ".validate": "newData.hasChildren(['criada'])",
+          "criada": { ".validate": "newData.isNumber()" },
+          "$outro": { ".validate": false }
+        },
+        "jogadores": {
+          "$id": {
+            ".validate": "$id.matches(/^[0-9]{1,10}$/)",
+            "entrou": { ".validate": "newData.isNumber()" },
+            "cheia": { ".validate": "newData.isBoolean()" },
+            "oferta": { ".validate": "newData.isString() && newData.val().length < 20000" },
+            "resposta": { ".validate": "newData.isString() && newData.val().length < 20000" },
+            "candidatos_host": {
+              "$c": {
+                ".validate": "newData.hasChildren(['m', 'i', 'n'])",
+                "m": { ".validate": "newData.isString() && newData.val().length < 50" },
+                "i": { ".validate": "newData.isNumber()" },
+                "n": { ".validate": "newData.isString() && newData.val().length < 1000" },
+                "$outro": { ".validate": false }
+              }
+            },
+            "candidatos_amigo": {
+              "$c": {
+                ".validate": "newData.hasChildren(['m', 'i', 'n'])",
+                "m": { ".validate": "newData.isString() && newData.val().length < 50" },
+                "i": { ".validate": "newData.isNumber()" },
+                "n": { ".validate": "newData.isString() && newData.val().length < 1000" },
+                "$outro": { ".validate": false }
+              }
+            },
+            "$outro": { ".validate": false }
+          }
+        },
+        "$outro": { ".validate": false }
+      }
+    }
+  }
+}

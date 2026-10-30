@@ -1,11 +1,13 @@
 extends Control
 
 # Menu inicial: treinar sozinho, hospedar uma partida ou entrar na de um amigo.
-# Pelo terminal também dá: -- --hospedar  ou  -- --entrar=ENDEREÇO (usado nos testes).
+# No PC é pelo endereço; pelo terminal também dá: -- --hospedar  ou  -- --entrar=ENDEREÇO (usado nos testes).
+# No navegador é por sala com código; o link site/?sala=ABCD já entra direto (e ?hospedar cria uma, pros testes).
 
 const ULTIMO_ENDERECO := "user://ultimo_endereco.txt"
 
 var endereco := LineEdit.new()
+var codigo := LineEdit.new()
 var aviso := Label.new()
 var opcoes := VBoxContainer.new()
 # Tela de carregamento: monta a arena escondida e mostra ela aos poucos (céu, coisas sólidas, vidro,
@@ -74,13 +76,19 @@ func _ready() -> void:
 	caixa.add_child(botao("Campo de teste", func() -> void: Rede.treinar("res://cenas/campo_teste.tscn")))
 	caixa.add_child(HSeparator.new())
 	if OS.has_feature("web"):
-		# no navegador essa conexão não funciona: as salas com código vêm no próximo passo
-		var em_breve := Label.new()
-		em_breve.text = "Jogar com amigos pelo navegador: em breve (salas com código)"
-		em_breve.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		em_breve.add_theme_color_override("font_color", Color(0.6, 0.63, 0.7))
-		caixa.add_child(em_breve)
+		caixa.add_child(botao("Criar sala (jogar com amigos)", criar_sala))
+		var linha_sala := HBoxContainer.new()
+		codigo.placeholder_text = "código da sala (ex.: KXPB)"
+		codigo.max_length = 4
+		codigo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		codigo.custom_minimum_size.y = 40
+		codigo.text_submitted.connect(func(_texto: String) -> void: entrar_na_sala())
+		linha_sala.add_child(codigo)
+		linha_sala.add_child(botao("Entrar na sala", entrar_na_sala))
+		caixa.add_child(linha_sala)
 		montar_aviso(caixa)
+		if ja_carregou:
+			pedidos_iniciais()
 		return
 	caixa.add_child(botao("Hospedar partida", hospedar))
 	var linha := HBoxContainer.new()
@@ -96,11 +104,26 @@ func _ready() -> void:
 	montar_aviso(caixa)
 	if FileAccess.file_exists(ULTIMO_ENDERECO):
 		endereco.text = FileAccess.get_file_as_string(ULTIMO_ENDERECO).strip_edges()
+	if ja_carregou:
+		pedidos_iniciais()
 
+
+func pedidos_iniciais() -> void:
+	# o que veio no terminal ou no link: só na primeira vez que o menu aparece
+	# (senão, voltando pro menu com ESC, entrava de novo na hora)
 	if Rede.leu_linha_de_comando:
 		return
-	# só na primeira vez que o menu aparece: senão, voltando pro menu com ESC, entrava de novo na hora
 	Rede.leu_linha_de_comando = true
+	if OS.has_feature("web"):
+		var busca := str(JavaScriptBridge.eval("location.search"))
+		print("[sala] link: ", busca)
+		for pedaco in busca.trim_prefix("?").split("&", false):
+			if pedaco.begins_with("sala="):
+				codigo.text = pedaco.trim_prefix("sala=").uri_decode()
+				entrar_na_sala()
+			elif pedaco == "hospedar":
+				criar_sala()
+		return
 	for argumento in OS.get_cmdline_user_args():
 		if argumento == "--hospedar":
 			hospedar.call_deferred()
@@ -143,6 +166,7 @@ func _process(_delta: float) -> void:
 			janela_escondida = null
 			carregando.visible = false
 			opcoes.visible = true
+			pedidos_iniciais()
 			return
 	barra.value = etapa + 1
 	etapa_texto.text = ETAPAS[etapa + 1] + "…"
@@ -184,6 +208,21 @@ func botao(texto: String, ao_clicar: Callable) -> Button:
 func hospedar() -> void:
 	if Rede.hospedar() != OK:
 		aviso.text = "Não deu pra hospedar: a porta %d já está em uso (o jogo já está aberto hospedando?)." % Rede.PORTA
+
+
+func criar_sala() -> void:
+	aviso.text = "Criando a sala…"
+	Rede.criar_sala()
+
+
+func entrar_na_sala() -> void:
+	var qual := codigo.text.strip_edges().to_upper()
+	if qual.length() != 4:
+		aviso.text = "O código da sala tem 4 letras (aparece na tela de quem criou a sala)."
+		return
+	codigo.text = qual
+	aviso.text = "Entrando na sala %s…" % qual
+	Rede.entrar_na_sala(qual)
 
 
 func entrar() -> void:

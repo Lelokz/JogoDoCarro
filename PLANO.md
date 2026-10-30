@@ -82,7 +82,8 @@ Esses são só o **ponto de partida**. O balanceamento final é o que ficar bom 
 
 ### Etapa 7 — Polimento
 - **Objetivo (dito pelo Lelokz em 30/10/2026): jogável pela internet de verdade — cada um abre o jogo no seu PC
-  e joga, sem complicação. Tailscale está fora (ele não gosta).** Conexão a decidir quando chegar a hora.
+  e joga, sem complicação. Tailscale está fora (ele não gosta).** Decidido: no navegador, tudo grátis, salas com
+  código (Firebase só pro aperto de mão + WebRTC direto). Feito em 30/10/2026; falta TURN e teste com amigo de verdade.
 - Esconder o atraso da internet (o carro de cada um responde na hora, sem "lag").
 - **Gráficos melhores** (pedido do Lelokz em 30/10/2026, depois do jogo rodar no navegador com amigos).
 - Carros com modelo melhor, cores dos times, sons, menu bonito, replay de gol.

@@ -3,6 +3,7 @@ extends Node
 # Multiplayer: um jogador hospeda (o PC dele roda a física de tudo) e os outros entram nele.
 # Quem entra manda os comandos e recebe a posição de tudo; o próprio carro ele calcula na hora
 # (pra não sentir o atraso da internet) e vai corrigindo com o que o host manda.
+# No PC a conexão é ENet pelo endereço; no navegador é WebRTC, com salas com código (ver sala.gd).
 
 const PORTA := 7777
 const MAXIMO_JOGADORES := 6   # 3 contra 3
@@ -16,13 +17,14 @@ var aviso := ""         # recado pro menu (ex.: "o host fechou a partida")
 var leu_linha_de_comando := false   # o -- --hospedar / --entrar só vale quando o jogo abre
 var cena_arena: PackedScene   # carregada no menu e guardada: o "Treinar sozinho" não espera carregar
 var ajustes_do_host := {}   # quem entrou guarda os ajustes do carro que o host mandou
+var sala: Sala   # sala com código (navegador)
 # teste: finge internet lenta segurando cada mensagem que sai (-- --atraso=60 = 60 ms)
 var atraso := 0.0
 var fila := []
 
 
 func _ready() -> void:
-	multiplayer.connected_to_server.connect(func() -> void: get_tree().change_scene_to_file("res://cenas/arena.tscn"))
+	multiplayer.connected_to_server.connect(abrir_arena)
 	multiplayer.connection_failed.connect(func() -> void: sair("Não deu pra conectar no host. Confere o endereço e se ele já clicou em Hospedar."))
 	multiplayer.server_disconnected.connect(func() -> void: sair("O host fechou a partida."))
 	for argumento in OS.get_cmdline_user_args():
@@ -45,10 +47,17 @@ func enviar(mensagem: Callable) -> void:
 
 func treinar(cena := "res://cenas/arena.tscn") -> void:
 	modo = "sozinho"
-	if cena == "res://cenas/arena.tscn" and cena_arena:
-		get_tree().change_scene_to_packed(cena_arena)
+	if cena == "res://cenas/arena.tscn":
+		abrir_arena()
 	else:
 		get_tree().change_scene_to_file(cena)
+
+
+func abrir_arena() -> void:
+	if cena_arena:
+		get_tree().change_scene_to_packed(cena_arena)
+	else:
+		get_tree().change_scene_to_file("res://cenas/arena.tscn")
 
 
 func hospedar() -> Error:
@@ -58,7 +67,7 @@ func hospedar() -> Error:
 		return erro
 	multiplayer.multiplayer_peer = conexao
 	modo = "host"
-	get_tree().change_scene_to_file("res://cenas/arena.tscn")
+	abrir_arena()
 	return OK
 
 
@@ -72,7 +81,52 @@ func entrar(endereco: String) -> Error:
 	return OK
 
 
+func criar_sala() -> void:
+	nova_sala().criar()
+	multiplayer.multiplayer_peer = sala.conexao
+	modo = "host"
+	abrir_arena()
+
+
+func entrar_na_sala(codigo: String) -> void:
+	# a arena só abre quando conectar no host (connected_to_server)
+	nova_sala().entrar(codigo)
+	multiplayer.multiplayer_peer = sala.conexao
+	modo = "cliente"
+
+
+func nova_sala() -> Sala:
+	fechar_sala()
+	sala = Sala.new()
+	sala.falhou.connect(sair)
+	add_child(sala)
+	return sala
+
+
+func convite() -> String:
+	# o que aparece na tela de quem hospeda pros amigos entrarem
+	if modo != "host":
+		return ""
+	if not sala:
+		return "HOSPEDANDO · teus amigos entram em: %s" % "  ou  ".join(enderecos_deste_pc())
+	if sala.codigo == "" or not sala.ativa:
+		return "Criando a sala…"
+	return "SALA %s\nteus amigos entram com esse código no site\nL: copiar o link" % sala.codigo
+
+
+func fechar_sala() -> void:
+	# primeiro desliga o jogo da conexão (senão o "host saiu" dispara de novo) e depois fecha a sala
+	if not sala:
+		return
+	var velha := sala
+	sala = null
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	velha.falhou.disconnect(sair)
+	velha.fechar()
+
+
 func sair(motivo := "") -> void:
+	fechar_sala()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	modo = "sozinho"
 	aviso = motivo
