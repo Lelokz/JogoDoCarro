@@ -11,6 +11,7 @@ signal estado_chegou(dados: Array)
 
 var modo := "sozinho"   # "sozinho", "host" ou "cliente"
 var aviso := ""         # recado pro menu (ex.: "o host fechou a partida")
+var leu_linha_de_comando := false   # o -- --hospedar / --entrar só vale quando o jogo abre
 
 
 func _ready() -> void:

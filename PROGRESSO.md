@@ -10,6 +10,12 @@ Diário do projeto. O mais novo fica em cima.
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
+## 30/10/2026: ESC no multiplayer
+- Tu achou: no amigo, ESC mostrava o menu por um instante e voltava pro jogo; no host, ESC "reiniciava" o jogo.
+- Causa: o `jogar_em_dois.sh` abre o jogo com "hospeda"/"entra em 127.0.0.1" escondido, e o menu
+  lia isso toda vez que aparecia, então hospedava/entrava de novo na hora. Agora só lê quando o jogo abre.
+- Testado sem tela: ESC no host e no amigo → fica no menu.
+
 ## 30/10/2026: Etapa 6, multiplayer (primeira versão) + paredes de vidro
 - **Paredes de vidro:** tu viu que, com a câmera da bola e o carro na parede, a câmera ficava atrás
   da parede e não dava pra ver nada. Agora a parede é vidro com a grade desenhada; a curva de baixo

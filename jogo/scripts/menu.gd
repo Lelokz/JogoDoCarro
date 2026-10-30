@@ -60,6 +60,10 @@ func _ready() -> void:
 	if FileAccess.file_exists(ULTIMO_ENDERECO):
 		endereco.text = FileAccess.get_file_as_string(ULTIMO_ENDERECO).strip_edges()
 
+	if Rede.leu_linha_de_comando:
+		return
+	# só na primeira vez que o menu aparece: senão, voltando pro menu com ESC, entrava de novo na hora
+	Rede.leu_linha_de_comando = true
 	for argumento in OS.get_cmdline_user_args():
 		if argumento == "--hospedar":
 			hospedar.call_deferred()
