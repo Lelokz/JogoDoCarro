@@ -8,6 +8,14 @@ Diário do projeto. O mais novo fica em cima.
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
+## 30/10/2026: drift com transição
+- Tu sentiu: soltando o Shift, o drift parava na hora e o carro voltava ao normal de uma vez.
+  Medido: o carro ia de 80° de lado pra 0° em 0,2 s, e a velocidade caía de 9,5 pra 3,2 m/s (o tranco).
+- Agora o pneu solta em 0,1 s quando aperta o Shift e **volta a agarrar aos poucos em 0,6 s** quando solta.
+  Na saída do drift o carro também **endireita sozinho** pra onde está indo, em vez de só frear de lado.
+  Resultado: o deslize some ao longo de ~0,5 s e o carro guarda mais velocidade.
+- Duas barrinhas novas no F1: "Volta da aderência" e "Endireitar na saída do drift".
+
 ## 30/10/2026 (madrugada): Etapa 2, suspensão + painel F1
 - Tu testou a etapa 1: "ficou legal". Pediu FOV menor.
   - O FOV não mudava: era a câmera ficando até ~2 m pra trás quando acelerava (parecia abrir).

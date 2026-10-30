@@ -20,10 +20,13 @@ extends RigidBody3D
 @export var aderencia := 60.0             # m/s² que os pneus seguram de lado
 @export var aderencia_freio_mao := 8.0
 @export var giro_freio_mao := 1.4         # vira quanto a mais no freio de mão
+@export var volta_aderencia := 0.6        # s pro pneu voltar a agarrar depois de soltar o freio de mão
+@export var endireitar := 2.0             # quanto o carro gira sozinho pra apontar pra onde está indo
 @export var angulo_visual_roda := 0.45    # rad, só a roda desenhada
 
 # [velocidade m/s, aceleração m/s²]: acelera forte parado e quase nada perto de 14,1
 const ACELERACAO := [[0.0, 16.0], [14.0, 1.6], [14.1, 0.0]]
+const ENTRADA_DERRAPAGEM := 0.1   # s pro pneu soltar quando aperta o freio de mão
 # [velocidade m/s, curvatura 1/m]: quanto mais rápido, mais aberta a curva
 const CURVATURA := [[0.0, 0.69], [5.0, 0.398], [10.0, 0.235], [15.0, 0.1375], [17.5, 0.11], [25.0, 0.088]]
 
@@ -31,6 +34,7 @@ const CURVATURA := [[0.0, 0.69], [5.0, 0.398], [10.0, 0.235], [15.0, 0.1375], [1
 
 var compressao := [0.0, 0.0, 0.0, 0.0]
 var rodas_no_chao := 0
+var derrapagem := 0.0   # 0 = pneu agarrando, 1 = freio de mão inteiro
 var giro_pneu := 0.0
 var ponto_inicial: Transform3D
 var pedido_desvirar := false
@@ -100,13 +104,19 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 			dv = -signf(v_frente) * minf(desaceleracao_solto * dt, absf(v_frente))
 		v += frente * dv * contato
 
-		var limite_lado := (aderencia_freio_mao if freio_mao else aderencia) * dt * contato
+		if freio_mao:
+			derrapagem = minf(derrapagem + dt / ENTRADA_DERRAPAGEM, 1.0)
+		else:
+			derrapagem = maxf(derrapagem - dt / volta_aderencia, 0.0)
+		var limite_lado := lerpf(aderencia, aderencia_freio_mao, derrapagem) * dt * contato
 		v -= lado * clampf(v_lado, -limite_lado, limite_lado)
 		v -= normal_chao * grude * dt * contato
 
 		var giro := -direcao * curva(CURVATURA, absf(v_frente)) * multiplicador_curva * v_frente
-		if freio_mao:
-			giro *= giro_freio_mao
+		giro *= lerpf(1.0, giro_freio_mao, derrapagem)
+		var angulo_deslize := frente.signed_angle_to(v.slide(normal_chao), normal_chao)
+		if v.length() > 2.0 and absf(angulo_deslize) < deg_to_rad(100.0):
+			giro += angulo_deslize * endireitar * (1.0 - derrapagem)
 		var w := estado.angular_velocity
 		estado.angular_velocity = w + cima * (giro - w.dot(cima)) * contato
 

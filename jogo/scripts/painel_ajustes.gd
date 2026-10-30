@@ -28,6 +28,8 @@ const AJUSTES := [
 	["carro", "aderencia", "Aderência (m/s²)", 5.0, 150.0, 1.0],
 	["carro", "aderencia_freio_mao", "Aderência no freio de mão", 0.0, 60.0, 0.5],
 	["carro", "giro_freio_mao", "Giro no freio de mão", 1.0, 3.0, 0.05],
+	["carro", "volta_aderencia", "Volta da aderência (s)", 0.05, 2.0, 0.05],
+	["carro", "endireitar", "Endireitar na saída do drift", 0.0, 8.0, 0.1],
 	["titulo", "Câmera"],
 	["camera", "distancia", "Distância (m)", 1.5, 6.0, 0.1],
 	["camera", "altura", "Altura (m)", 0.3, 3.0, 0.05],
