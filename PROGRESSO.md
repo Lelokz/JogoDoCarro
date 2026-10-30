@@ -27,6 +27,7 @@ Diário do projeto. O mais novo fica em cima.
   - Resultado (pior caso, 1ª vez): o jogo abre a tela de carregamento em ~3 s, carrega por ~7 s,
     e **"Treinar sozinho" abre em 0,15 s** (era 11 s). Da 2ª vez em diante o navegador/placa lembram e é mais rápido.
 - Site publicado de novo.
+- Tu testou no site: "ficou bem melhor!".
 
 ## 30/10/2026: o jogo no navegador (passo 1 de "jogar pela internet sem baixar nada")
 - Decidido contigo: **tudo de graça**. Site no Firebase Hosting; salas com código; os navegadores conversam
