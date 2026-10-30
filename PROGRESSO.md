@@ -15,6 +15,7 @@ Diário do projeto. O mais novo fica em cima.
 - Causa: o `jogar_em_dois.sh` abre o jogo com "hospeda"/"entra em 127.0.0.1" escondido, e o menu
   lia isso toda vez que aparecia, então hospedava/entrava de novo na hora. Agora só lê quando o jogo abre.
 - Testado sem tela: ESC no host e no amigo → fica no menu.
+- Tu testou as duas janelas de novo: "agora ficou melhor".
 
 ## 30/10/2026: Etapa 6, multiplayer (primeira versão) + paredes de vidro
 - **Paredes de vidro:** tu viu que, com a câmera da bola e o carro na parede, a câmera ficava atrás
