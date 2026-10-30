@@ -19,12 +19,16 @@ const COR_AZUL := Color(0.15, 0.4, 1.0)
 const COR_LARANJA := Color(1.0, 0.5, 0.1)
 
 var material := ShaderMaterial.new()
+var material_vidro := ShaderMaterial.new()
 
 
 func _ready() -> void:
 	material.shader = preload("res://shaders/arena.gdshader")
 	material.set_shader_parameter("metade_comprimento", COMPRIMENTO / 2.0)
 	material.set_shader_parameter("meia_largura_gol", GOL_LARGURA / 2.0)
+	material_vidro.shader = preload("res://shaders/arena_vidro.gdshader")
+	material_vidro.set_shader_parameter("metade_comprimento", COMPRIMENTO / 2.0)
+	criar_chao_de_fora()
 	criar_bloco(Vector3(0, -0.5, 0), Vector3(LARGURA + 2.0, 1.0, COMPRIMENTO + 2.0 * GOL_FUNDO + 4.0), material)
 	# teto: só colisão, pra ver o céu
 	criar_bloco(Vector3(0, ALTURA + 0.5, 0), Vector3(LARGURA + 2.0, 1.0, COMPRIMENTO + 2.0), null)
@@ -109,7 +113,7 @@ func criar_paredes() -> void:
 	forma.shape = colisao
 	var desenho := MeshInstance3D.new()
 	desenho.mesh = malha.commit()
-	desenho.material_override = material
+	desenho.material_override = material_vidro
 	desenho.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	corpo.add_child(forma)
 	corpo.add_child(desenho)
@@ -142,6 +146,18 @@ func criar_gol(lado: float, cor: Color) -> void:
 	criar_bloco(Vector3(-(g + 0.5), GOL_ALTURA / 2.0, linha + lado * GOL_FUNDO / 2.0), Vector3(1.0, GOL_ALTURA, GOL_FUNDO), rede)
 	criar_bloco(Vector3(g + 0.5, GOL_ALTURA / 2.0, linha + lado * GOL_FUNDO / 2.0), Vector3(1.0, GOL_ALTURA, GOL_FUNDO), rede)
 	criar_bloco(Vector3(0, GOL_ALTURA + 0.5, linha + lado * GOL_FUNDO / 2.0), Vector3(GOL_LARGURA + 2.0, 1.0, GOL_FUNDO), rede)
+
+
+func criar_chao_de_fora() -> void:
+	# só pra aparecer pelo vidro: um chão escuro em volta da arena
+	var desenho := MeshInstance3D.new()
+	desenho.mesh = PlaneMesh.new()
+	desenho.mesh.size = Vector2(600, 600)
+	desenho.position.y = -1.0
+	var cor := StandardMaterial3D.new()
+	cor.albedo_color = Color(0.07, 0.08, 0.1)
+	desenho.material_override = cor
+	add_child(desenho)
 
 
 func criar_bloco(posicao: Vector3, tamanho: Vector3, aparencia: Material) -> void:
