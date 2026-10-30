@@ -63,6 +63,7 @@ var ponto_inicial: Transform3D
 var pedido_desvirar := false
 var pedido_voltar := false
 var pedido_pulo := false
+var travado := false   # parado na contagem da saída de bola
 
 var boost := 100.0
 var boostando := false
@@ -104,6 +105,10 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 
 	var dt := estado.step
 	ler_suspensao(estado, dt)
+	if travado:
+		estado.linear_velocity = Vector3.ZERO
+		estado.angular_velocity = Vector3.ZERO
+		return
 	var no_chao := rodas_no_chao >= 3
 	if no_chao and not pulando and (not pulou or tempo_no_ar_pos_pulo > 0.0):
 		pulou = false
@@ -331,6 +336,11 @@ func desvirar_pulando(estado: PhysicsDirectBodyState3D) -> void:
 	eixo_desvirar = eixo.normalized()
 	tempo_desvirando = cima.angle_to(Vector3.UP) / GIRO_MAXIMO
 	estado.linear_velocity += Vector3.UP * 2.0
+
+
+func colocar_em(onde: Transform3D) -> void:
+	ponto_inicial = onde
+	pedido_voltar = true
 
 
 func atualizar_boost(dt: float) -> void:

@@ -13,7 +13,7 @@ func _ready() -> void:
 	carro = get_node(carro_caminho)
 	bola = get_node(bola_caminho)
 	camera = get_node(camera_caminho)
-	$Controles.text = "W/S ou RT/LT: acelerar e ré   ·   A/D ou analógico: virar   ·   Shift ou X: freio de mão (no ar: rolar)\nEspaço, botão direito ou A: pulo (de novo no ar = duplo pulo; com direção = mortal)   ·   Botão esquerdo, Ctrl ou B: boost\nNo ar: W/S inclina, A/D vira, Q/E rola   ·   C ou Y: câmera da bola   ·   G: bola na frente   ·   R: desvirar   ·   T: início   ·   F1: ajustes   ·   F11: tela cheia"
+	$Controles.text = "W/S ou RT/LT: acelerar e ré   ·   A/D ou analógico: virar   ·   Shift ou X: freio de mão (no ar: rolar)\nEspaço, botão direito ou A: pulo (de novo no ar = duplo pulo; com direção = mortal)   ·   Botão esquerdo, Ctrl ou B: boost\nNo ar: W/S inclina, A/D vira, Q/E rola   ·   C ou Y: câmera da bola   ·   G: bola na frente   ·   R: desvirar   ·   T: início   ·   F1: ajustes   ·   F2: arena / campo de teste   ·   F11: tela cheia"
 
 
 func _process(_delta: float) -> void:

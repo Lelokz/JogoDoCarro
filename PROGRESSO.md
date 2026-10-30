@@ -8,6 +8,23 @@ Diário do projeto. O mais novo fica em cima.
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
+## 30/10/2026: Etapa 5, a arena
+- **Arena gerada por código** (`scripts/arena.gd`, muda os números e ela muda junto):
+  80 m × 100 m × 20 m de altura, **cantos arredondados** vistos de cima (desenho nosso, o RL usa cantos retos),
+  curva de 3 m entre chão e parede e entre parede e teto. Teto só com colisão (dá pra ver o céu).
+  Gols de 18 × 6,5 m com 9 m de fundo, rede transparente da cor do time.
+  Chão com linha do meio, círculo central e linha do gol; metade azul, metade laranja.
+- **Partida** (`scripts/partida.gd`): tu é o Azul e ataca o gol laranja.
+  - Saída de bola: 5 posições sorteadas, carro olhando pra bola, 33 de boost, contagem 3-2-1-VAI (carro travado).
+  - Gol quando a bola passa inteira da linha: "GOL DO AZUL!", 3 s, nova saída. Gol contra conta pro Laranja.
+  - Cronômetro de 5 min; acabou empatado → prorrogação (quem fizer o próximo gol ganha). Fim: Enter joga de novo.
+  - **Pads de boost:** 6 grandes (enchem o tanque, voltam em 10 s) e 22 pequenos (+12, voltam em 4 s).
+- **F2** troca entre a arena e o campo de teste. O jogo agora abre na arena.
+- Teste sem tela: o carro sobe as duas paredes até o teto (19,8 m) com as 4 rodas grudadas;
+  os dois gols e o gol contra contam certo; pads dão 100/12 e apagam; a bola a 60 m/s nunca escapa
+  (parede, teto, canto, trave); prorrogação e fim de jogo funcionam.
+- Ainda não visto na tela: o visual da arena foi feito sem eu conseguir olhar.
+
 ## 30/10/2026: bola 20% mais fraca
 - Tu achou a bola rápida demais: num campo do tamanho do RL ela chegaria do outro lado antes do carro.
   Pediu uns 20% a menos.
@@ -107,4 +124,4 @@ Fica salvo em `jogo/ajustes/carro.json` (o jogo abre com ele).
 - Velocidade máxima 23 → 40: voltei pra 23 na etapa 3 (sem querer também)
 - Força da batida da bola: 80% (a bola ficava rápida demais pro tamanho do campo)
 
-**Próximo passo:** tu testar a bola → Etapa 5 (a arena: paredes curvas, gols, placar).
+**Próximo passo:** tu testar a arena → Etapa 6 (multiplayer: um vira host, os outros entram).

@@ -21,6 +21,7 @@ func _ready() -> void:
 	adicionar("trazer_bola", [KEY_G], [JOY_BUTTON_DPAD_UP], [])
 	adicionar("tela_cheia", [KEY_F11], [], [])
 	adicionar("painel", [KEY_F1], [], [])
+	adicionar("trocar_mapa", [KEY_F2], [], [])
 
 
 func adicionar(nome: String, teclas: Array, botoes: Array, eixos: Array, mouse: Array = []) -> void:
@@ -46,6 +47,9 @@ func adicionar(nome: String, teclas: Array, botoes: Array, eixos: Array, mouse: 
 
 
 func _unhandled_input(evento: InputEvent) -> void:
+	if evento.is_action_pressed("trocar_mapa"):
+		var na_arena := get_tree().current_scene.scene_file_path.ends_with("arena.tscn")
+		get_tree().change_scene_to_file("res://cenas/campo_teste.tscn" if na_arena else "res://cenas/arena.tscn")
 	if evento.is_action_pressed("tela_cheia"):
 		if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
