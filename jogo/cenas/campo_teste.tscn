@@ -1,0 +1,58 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/campo_teste.gd" id="1"]
+[ext_resource type="PackedScene" path="res://cenas/carro.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/camera_carro.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="4"]
+
+[sub_resource type="ProceduralSkyMaterial" id="mat_ceu"]
+
+[sub_resource type="Sky" id="ceu"]
+sky_material = SubResource("mat_ceu")
+
+[sub_resource type="Environment" id="ambiente"]
+background_mode = 2
+sky = SubResource("ceu")
+ambient_light_source = 3
+tonemap_mode = 2
+
+[node name="CampoTeste" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Ambiente" type="WorldEnvironment" parent="."]
+environment = SubResource("ambiente")
+
+[node name="Sol" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.9, 0.5, 0)
+shadow_enabled = true
+
+[node name="Carro" parent="." instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+
+[node name="Camera" type="Camera3D" parent="."]
+fov = 100.0
+script = ExtResource("3")
+alvo_caminho = NodePath("../Carro")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("4")
+carro_caminho = NodePath("../Carro")
+
+[node name="Velocidade" type="Label" parent="Hud"]
+offset_left = 20.0
+offset_top = 16.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 26
+
+[node name="Controles" type="Label" parent="Hud"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -64.0
+offset_bottom = -16.0
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
