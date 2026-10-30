@@ -81,6 +81,8 @@ Esses são só o **ponto de partida**. O balanceamento final é o que ficar bom 
   abrir uma porta no roteador do host. A gente decide quando chegar aqui.
 
 ### Etapa 7 — Polimento
+- **Objetivo (dito pelo Lelokz em 30/10/2026): jogável pela internet de verdade — cada um abre o jogo no seu PC
+  e joga, sem complicação. Tailscale está fora (ele não gosta).** Conexão a decidir quando chegar a hora.
 - Esconder o atraso da internet (o carro de cada um responde na hora, sem "lag").
 - Carros com modelo melhor, cores dos times, sons, menu bonito, replay de gol.
 - Exportar pra Windows e mandar pros amigos.

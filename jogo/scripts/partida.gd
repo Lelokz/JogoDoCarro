@@ -2,7 +2,9 @@ extends Node
 
 # Regras da partida: saída de bola com contagem, gol, placar, cronômetro, prorrogação e pads de boost.
 # Sozinho ou hospedando, a partida roda aqui e o host manda tudo pros outros 60 vezes por segundo.
-# Quem entrou na partida de outro só mostra o que chega (e manda os próprios comandos pro host).
+# Quem entrou na partida de outro mostra o que chega e manda os próprios comandos pro host.
+# O próprio carro ele calcula na hora (não espera a internet) e vai corrigindo com o que o host
+# calculou pro mesmo comando: se bate, nada muda; se não bate, puxa aos poucos pro certo.
 # O Azul ataca o gol laranja (z negativo); o Laranja ataca o gol azul.
 
 @export var carro_caminho: NodePath
@@ -30,6 +32,9 @@ const CENA_CARRO := preload("res://cenas/carro.tscn")
 # quem entrou mostra a partida um pouquinho atrás (6 quadros do host = 50 ms),
 # pra sempre ter dois estados pra misturar e o movimento ficar liso
 const ATRASO_IMAGEM := 6.0
+const FRACAO_CORRECAO := 0.3   # quanto da diferença pro host corrige por estado que chega
+const ERRO_TELEPORTE := 4.0    # m: mais que isso (ex.: saída de bola) corrige de uma vez
+const TEMPO_AJUSTES := 2.0     # s entre um envio e outro dos ajustes do carro
 
 enum Estado { CONTAGEM, JOGANDO, GOL, FIM }
 
@@ -49,6 +54,16 @@ var pads := []
 var tempo_total := 0.0
 var estados_recebidos := []
 var quadro_imagem := -1.0
+# host: os comandos de cada amigo esperam numa fila e a física usa um por passo, em ordem
+# (pela internet eles chegam em bolos); comando_usado = número do comando que a física usou
+const FILA_MAXIMA := 4
+var fila_comandos := {}
+var comando_usado := {}
+var tempo_ajustes := 0.0
+# quem entrou: o que o próprio carro calculou em cada comando, pra comparar com o host
+var historico := {}
+var comando_anterior := -1
+var erros_medidos := []   # pros testes: tamanho da diferença pro host (m)
 
 
 func _ready() -> void:
@@ -62,10 +77,16 @@ func _ready() -> void:
 	var eu := multiplayer.get_unique_id()
 	carros[eu] = carro
 	if Rede.modo == "cliente":
-		carro.definir_simulacao(false)
 		bola.freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
 		bola.freeze = true
+		# a bola e os outros carros só aparecem onde o host manda: o meu carro passa por eles aqui,
+		# quem bate de verdade é o host (e a correção traz o resultado)
+		carro.add_collision_exception_with(bola)
+		carro.travado = true
 		Rede.estado_chegou.connect(estado_chegou)
+		Rede.ajustes_chegaram.connect(aplicar_ajustes)
+		if not Rede.ajustes_do_host.is_empty():
+			aplicar_ajustes(Rede.ajustes_do_host)
 		mensagem("Entrando na partida…")
 		return
 	times[eu] = "azul"
@@ -79,10 +100,18 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if Rede.modo == "cliente":
-		Rede.receber_comandos.rpc_id(1, carro.comandos.para_rede())
+		if comando_anterior >= 0:
+			historico[comando_anterior] = [carro.global_position, carro.global_basis.get_rotation_quaternion(), carro.linear_velocity, carro.angular_velocity, carro.boost]
+		var numero := Engine.get_physics_frames()
+		var dados: Array = [numero] + carro.comandos.para_rede()
+		Rede.enviar(func() -> void: Rede.receber_comandos.rpc_id(1, dados))
+		comando_anterior = numero
 		mostrar_estado()
 		return
 
+	# o estado de agora veio do passo da física que usou os comandos do quadro anterior
+	var comandos_do_estado := comando_usado.duplicate()
+	usar_comandos_da_fila()
 	tempo_estado += delta
 	tempo_total += delta
 	atualizar_pads()
@@ -114,8 +143,15 @@ func _physics_process(delta: float) -> void:
 			if Input.is_action_just_pressed("ui_accept"):
 				nova_partida()
 	atualizar_placar()
-	if Rede.modo == "host" and Engine.get_physics_frames() % 2 == 0:
-		Rede.receber_estado.rpc(montar_estado())
+	if Rede.modo == "host":
+		if Engine.get_physics_frames() % 2 == 0:
+			var estado_agora := montar_estado(comandos_do_estado)
+			Rede.enviar(func() -> void: Rede.receber_estado.rpc(estado_agora))
+		tempo_ajustes += delta
+		if tempo_ajustes >= TEMPO_AJUSTES:
+			tempo_ajustes = 0.0
+			var ajustes := ajustes_atuais()
+			Rede.enviar(func() -> void: Rede.receber_ajustes.rpc(ajustes))
 
 
 func ver_gol() -> void:
@@ -205,6 +241,8 @@ func jogador_entrou(id: int) -> void:
 	novo.definir_time(time)
 	colocar_na_saida(novo, time, SAIDAS[(times.values().count(time) - 1) % SAIDAS.size()])
 	novo.travado = estado == Estado.CONTAGEM or estado == Estado.FIM
+	var ajustes := ajustes_atuais()
+	Rede.enviar(func() -> void: Rede.receber_ajustes.rpc_id(id, ajustes))
 
 
 func jogador_saiu(id: int) -> void:
@@ -212,11 +250,48 @@ func jogador_saiu(id: int) -> void:
 		carros[id].queue_free()
 		carros.erase(id)
 		times.erase(id)
+		fila_comandos.erase(id)
+		comando_usado.erase(id)
 
 
 func comandos_chegaram(id: int, dados: Array) -> void:
-	if carros.has(id):
-		carros[id].comandos.de_rede(dados)
+	if not carros.has(id) or dados.size() != 8:
+		return
+	var fila: Array = fila_comandos.get_or_add(id, [])
+	if fila.is_empty() or dados[0] > fila[-1][0]:
+		fila.append(dados)
+
+
+func usar_comandos_da_fila() -> void:
+	for id in fila_comandos:
+		var fila: Array = fila_comandos[id]
+		# se juntou demais (a internet travou e depois chegou tudo), pula os velhos;
+		# um pulo apertado no meio não se perde: o comando conta quantas vezes apertou
+		while fila.size() > FILA_MAXIMA:
+			fila.pop_front()
+		if fila.is_empty():
+			continue   # nada novo: o carro segue com o último comando
+		var dados: Array = fila.pop_front()
+		carros[id].comandos.de_rede(dados.slice(1))
+		comando_usado[id] = dados[0]
+
+
+func ajustes_atuais() -> Dictionary:
+	var ajustes := {"gravidade": PhysicsServer3D.area_get_param(get_viewport().find_world_3d().space, PhysicsServer3D.AREA_PARAM_GRAVITY)}
+	for propriedade in carro.get_property_list():
+		var uso: int = propriedade["usage"]
+		if uso & PROPERTY_USAGE_SCRIPT_VARIABLE and uso & PROPERTY_USAGE_STORAGE:
+			ajustes[propriedade["name"]] = carro.get(propriedade["name"])
+	return ajustes
+
+
+func aplicar_ajustes(ajustes: Dictionary) -> void:
+	# quem entrou calcula o próprio carro igualzinho ao host
+	for nome in ajustes:
+		if nome == "gravidade":
+			PhysicsServer3D.area_set_param(get_viewport().find_world_3d().space, PhysicsServer3D.AREA_PARAM_GRAVITY, ajustes[nome])
+		elif nome in carro:
+			carro.set(nome, ajustes[nome])
 
 
 func copiar_ajustes(de: RigidBody3D, para: RigidBody3D) -> void:
@@ -227,11 +302,11 @@ func copiar_ajustes(de: RigidBody3D, para: RigidBody3D) -> void:
 			para.set(propriedade["name"], de.get(propriedade["name"]))
 
 
-func montar_estado() -> Array:
+func montar_estado(comandos_do_estado: Dictionary) -> Array:
 	var lista := []
 	for id in carros:
 		var c: RigidBody3D = carros[id]
-		lista.append([id, times[id], c.global_position, c.global_basis.get_rotation_quaternion(), c.linear_velocity, c.boost, c.boostando, c.supersonico, c.comandos.direcao])
+		lista.append([id, times[id], c.global_position, c.global_basis.get_rotation_quaternion(), c.linear_velocity, c.boost, c.boostando, c.supersonico, c.comandos.direcao, c.angular_velocity, comandos_do_estado.get(id, -1), c.travado])
 	var acesos := 0
 	for i in pads.size():
 		if pads[i]["brilho"].visible:
@@ -246,6 +321,43 @@ func estado_chegou(dados: Array) -> void:
 	estados_recebidos.append(dados)
 	if estados_recebidos.size() > 30:
 		estados_recebidos.pop_front()
+	corrigir_meu_carro(dados)
+
+
+func corrigir_meu_carro(dados: Array) -> void:
+	var eu := multiplayer.get_unique_id()
+	for meu in dados[1]:
+		if meu[0] != eu:
+			continue
+		carro.travado = meu[11]
+		var numero: int = meu[10]
+		if not historico.has(numero):
+			return
+		# compara o que o host calculou com o que eu calculei pro mesmo comando
+		var antes: Array = historico[numero]
+		var erro: Vector3 = meu[2] - antes[0]
+		erros_medidos.append(erro.length())
+		var de_uma_vez := erro.length() > ERRO_TELEPORTE
+		var fracao := 1.0 if de_uma_vez else FRACAO_CORRECAO
+		var posicao := erro * fracao
+		var rotacao := Quaternion.IDENTITY.slerp(meu[3] * antes[1].inverse(), fracao)
+		var velocidade: Vector3 = (meu[4] - antes[2]) * fracao
+		var giro: Vector3 = (meu[9] - antes[3]) * fracao
+		var boost: float = (meu[5] - antes[4]) * fracao
+		carro.corrigir(posicao, rotacao, velocidade, giro, de_uma_vez)
+		carro.boost = clampf(carro.boost + boost, 0.0, 100.0)
+		# o que eu calculei depois desse comando anda junto com a correção
+		for n in historico.keys():
+			if n < numero:
+				historico.erase(n)
+				continue
+			var h: Array = historico[n]
+			h[0] += posicao
+			h[1] = rotacao * h[1]
+			h[2] += velocidade
+			h[3] += giro
+			h[4] += boost
+		return
 
 
 func mostrar_estado() -> void:
@@ -276,8 +388,13 @@ func aplicar_estado(a: Array, b: Array, t: float) -> void:
 	for dados in b[1]:
 		em_b[dados[0]] = dados
 	var presentes := {}
+	var eu := multiplayer.get_unique_id()
 	for da in a[1]:
 		var id: int = da[0]
+		if id == eu:
+			carro_do_jogador(id, da[1])   # só pra saber o meu time (cor e placar)
+			presentes[id] = true   # a posição do meu carro eu calculo na hora (e corrijo em corrigir_meu_carro)
+			continue
 		var db: Array = em_b.get(id, da)
 		var c := carro_do_jogador(id, db[1])
 		var posicao: Vector3 = da[2].lerp(db[2], t)
@@ -322,6 +439,7 @@ func carro_do_jogador(id: int, time: String) -> RigidBody3D:
 		novo.controle_local = false
 		get_parent().add_child(novo)
 		novo.definir_simulacao(false)
+		carro.add_collision_exception_with(novo)
 		carros[id] = novo
 	if times.get(id, "") != time:
 		times[id] = time

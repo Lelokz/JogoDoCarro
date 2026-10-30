@@ -1,23 +1,45 @@
 extends Node
 
 # Multiplayer: um jogador hospeda (o PC dele roda a física de tudo) e os outros entram nele.
-# Quem entra só manda os comandos e recebe a posição de tudo.
+# Quem entra manda os comandos e recebe a posição de tudo; o próprio carro ele calcula na hora
+# (pra não sentir o atraso da internet) e vai corrigindo com o que o host manda.
 
 const PORTA := 7777
 const MAXIMO_JOGADORES := 6   # 3 contra 3
 
 signal comandos_chegaram(id: int, dados: Array)
 signal estado_chegou(dados: Array)
+signal ajustes_chegaram(dados: Dictionary)
 
 var modo := "sozinho"   # "sozinho", "host" ou "cliente"
 var aviso := ""         # recado pro menu (ex.: "o host fechou a partida")
 var leu_linha_de_comando := false   # o -- --hospedar / --entrar só vale quando o jogo abre
+var ajustes_do_host := {}   # quem entrou guarda os ajustes do carro que o host mandou
+# teste: finge internet lenta segurando cada mensagem que sai (-- --atraso=60 = 60 ms)
+var atraso := 0.0
+var fila := []
 
 
 func _ready() -> void:
 	multiplayer.connected_to_server.connect(func() -> void: get_tree().change_scene_to_file("res://cenas/arena.tscn"))
 	multiplayer.connection_failed.connect(func() -> void: sair("Não deu pra conectar no host. Confere o endereço e se ele já clicou em Hospedar."))
 	multiplayer.server_disconnected.connect(func() -> void: sair("O host fechou a partida."))
+	for argumento in OS.get_cmdline_user_args():
+		if argumento.begins_with("--atraso="):
+			atraso = argumento.trim_prefix("--atraso=").to_float() / 1000.0
+
+
+func _physics_process(_delta: float) -> void:
+	var agora := Time.get_ticks_msec() / 1000.0
+	while not fila.is_empty() and fila[0][0] <= agora:
+		fila.pop_front()[1].call()
+
+
+func enviar(mensagem: Callable) -> void:
+	if atraso <= 0.0:
+		mensagem.call()
+	else:
+		fila.append([Time.get_ticks_msec() / 1000.0 + atraso, mensagem])
 
 
 func treinar(cena := "res://cenas/arena.tscn") -> void:
@@ -50,6 +72,8 @@ func sair(motivo := "") -> void:
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	modo = "sozinho"
 	aviso = motivo
+	ajustes_do_host = {}
+	fila.clear()
 	get_tree().change_scene_to_file("res://cenas/menu.tscn")
 
 
@@ -74,3 +98,9 @@ func receber_comandos(dados: Array) -> void:
 @rpc("authority", "call_remote", "unreliable_ordered", 1)
 func receber_estado(dados: Array) -> void:
 	estado_chegou.emit(dados)
+
+
+@rpc("authority", "call_remote", "reliable", 2)
+func receber_ajustes(dados: Dictionary) -> void:
+	ajustes_do_host = dados
+	ajustes_chegaram.emit(dados)

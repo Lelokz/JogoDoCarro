@@ -10,6 +10,27 @@ Diário do projeto. O mais novo fica em cima.
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
+## 30/10/2026: Etapa 7 (parte 1), esconder o atraso da internet
+- Tu pediu só isso por agora (versão Windows e conexão pela internet depois; **Tailscale não**).
+  Objetivo do jogo: **jogável pela internet, cada um abre no seu PC e joga, sem complicação.**
+- **O carro de quem entra é calculado na hora no PC dele** (não espera o host). O PC dele guarda o que calculou
+  em cada comando; quando o estado do host chega, compara com o que o host calculou pro mesmo comando e corrige
+  30% da diferença por vez (suave). Diferença maior que 4 m (saída de bola) corrige de uma vez.
+- **O host usa os comandos de cada amigo um por passo, em ordem** (numa fila), em vez de "o último que chegou":
+  pela internet os comandos chegam em bolos e o host usava uns duas vezes e pulava outros.
+- O host manda os **ajustes do carro** (F1) e a gravidade pros amigos a cada 2 s, pra todo mundo calcular igual.
+- **Internet lenta de mentira pra testar:** `./jogar_em_dois.sh 60` (60 ms pra ir e 60 pra voltar) e `./testar_rede.sh 60`.
+- Medido (teste sem tela, amigo acelerando, boost e pulo):
+  | internet | carro do amigo começa a se mexer | diferença pro host (95% das vezes) |
+  |---|---|---|
+  | sem atraso | 17 ms | 0,4 cm |
+  | 60 + 60 ms | 17 ms | 1,9 cm |
+  | 120 + 120 ms | 17 ms | 6,1 cm |
+  Antes, com 60 + 60 ms, o carro do amigo só começava a andar ~170 ms depois de apertar.
+- **Ainda falta:** a bola e os outros carros aparecem pro amigo um pouquinho no passado (o tempo da internet).
+  No PC do amigo o carro dele passa "por dentro" da bola e a batida de verdade acontece no host;
+  o resultado (bola voando, carro freando) chega com o atraso da internet. Próximo passo, se incomodar.
+
 ## 30/10/2026: ESC no multiplayer
 - Tu achou: no amigo, ESC mostrava o menu por um instante e voltava pro jogo; no host, ESC "reiniciava" o jogo.
 - Causa: o `jogar_em_dois.sh` abre o jogo com "hospeda"/"entra em 127.0.0.1" escondido, e o menu
@@ -155,4 +176,4 @@ Fica salvo em `jogo/ajustes/carro.json` (o jogo abre com ele).
 - Velocidade máxima 23 → 40: voltei pra 23 na etapa 3 (sem querer também)
 - Força da batida da bola: 80% (a bola ficava rápida demais pro tamanho do campo)
 
-**Próximo passo:** tu testar o multiplayer (`./jogar_em_dois.sh`) → versão Windows pros amigos + como conectar pela internet → Etapa 7 (esconder o atraso).
+**Próximo passo:** tu testar com internet lenta de mentira (`./jogar_em_dois.sh 60`) → decidir se a bola também precisa ser prevista → jeito de jogar pela internet sem complicação + versão Windows.

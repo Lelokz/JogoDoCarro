@@ -72,6 +72,13 @@ var controle_local := true
 var simulando := true
 var velocidade_rede := Vector3.ZERO
 var pulos_vistos := -1
+# quem entrou numa partida: diferença pro que o host calculou, aplicada no próximo passo da física
+var correcao_posicao := Vector3.ZERO
+var correcao_rotacao := Quaternion.IDENTITY
+var correcao_velocidade := Vector3.ZERO
+var correcao_giro := Vector3.ZERO
+var tem_correcao := false
+var resetar_interpolacao := false
 var desviradas_vistas := -1
 
 var boost := 100.0
@@ -97,6 +104,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if resetar_interpolacao:
+		reset_physics_interpolation()
+		resetar_interpolacao = false
 	if controle_local:
 		comandos.ler_teclado()
 	if simulando:
@@ -120,6 +130,8 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 		reposicionar(estado)
 		return
 
+	if tem_correcao:
+		aplicar_correcao(estado)
 	var dt := estado.step
 	ler_suspensao(estado, dt)
 	if travado:
@@ -353,6 +365,30 @@ func desvirar_pulando(estado: PhysicsDirectBodyState3D) -> void:
 	eixo_desvirar = eixo.normalized()
 	tempo_desvirando = cima.angle_to(Vector3.UP) / GIRO_MAXIMO
 	estado.linear_velocity += Vector3.UP * 2.0
+
+
+func corrigir(posicao: Vector3, rotacao: Quaternion, velocidade_: Vector3, giro: Vector3, de_uma_vez: bool) -> void:
+	correcao_posicao += posicao
+	correcao_rotacao = rotacao * correcao_rotacao
+	correcao_velocidade += velocidade_
+	correcao_giro += giro
+	tem_correcao = true
+	if de_uma_vez:
+		resetar_interpolacao = true
+
+
+func aplicar_correcao(estado: PhysicsDirectBodyState3D) -> void:
+	var t := estado.transform
+	t.origin += correcao_posicao
+	t.basis = Basis(correcao_rotacao) * t.basis.orthonormalized()
+	estado.transform = t
+	estado.linear_velocity += correcao_velocidade
+	estado.angular_velocity += correcao_giro
+	correcao_posicao = Vector3.ZERO
+	correcao_rotacao = Quaternion.IDENTITY
+	correcao_velocidade = Vector3.ZERO
+	correcao_giro = Vector3.ZERO
+	tem_correcao = false
 
 
 func velocidade() -> Vector3:

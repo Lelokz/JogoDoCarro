@@ -42,6 +42,13 @@ func rodar() -> void:
 	await create_timer(3.0).timeout   # espera o VAI da saída de bola
 	var comeco := meu.global_position
 	Input.action_press("acelerar")
+	var quadros_pra_andar := 0
+	for i in 240:
+		await physics_frame
+		quadros_pra_andar += 1
+		if meu.velocidade().length() > 0.05:
+			break
+	print("%s: apertei acelerar e o meu carro começou a se mexer em %d ms" % [nome, roundi(quadros_pra_andar * 1000.0 / 120.0)])
 	Input.action_press("boost")
 	await create_timer(1.5).timeout
 	Input.action_release("boost")
@@ -54,5 +61,9 @@ func rodar() -> void:
 		mais_alto = maxf(mais_alto, meu.global_position.y)
 	Input.action_release("acelerar")
 	print("%s: no meu PC o meu carro andou %.1f m e subiu até %.1f m; recebi %d estados do host" % [nome, comeco.distance_to(meu.global_position), mais_alto, partida.estados_recebidos.size()])
+	var erros: Array = partida.erros_medidos.slice(20)   # depois da entrada e da saída de bola
+	erros.sort()
+	if not erros.is_empty():
+		print("%s: diferença pro host em %d comparações: metade abaixo de %.1f cm, 95%% abaixo de %.1f cm, maior %.1f cm" % [nome, erros.size(), erros[erros.size() / 2] * 100.0, erros[int(erros.size() * 0.95)] * 100.0, erros[-1] * 100.0])
 	await create_timer(6.0).timeout
 	quit()
