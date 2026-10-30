@@ -17,6 +17,8 @@ func _ready() -> void:
 	adicionar("rolar_direita", [KEY_E], [JOY_BUTTON_RIGHT_SHOULDER], [])
 	adicionar("desvirar", [KEY_R], [JOY_BUTTON_BACK], [])
 	adicionar("voltar_inicio", [KEY_T], [], [])
+	adicionar("camera_bola", [KEY_C], [JOY_BUTTON_Y], [])
+	adicionar("trazer_bola", [KEY_G], [JOY_BUTTON_DPAD_UP], [])
 	adicionar("tela_cheia", [KEY_F11], [], [])
 	adicionar("painel", [KEY_F1], [], [])
 

@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/campo_teste.gd" id="1"]
 [ext_resource type="PackedScene" path="res://cenas/carro.tscn" id="2"]
 [ext_resource type="Script" path="res://scripts/camera_carro.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="4"]
 [ext_resource type="Script" path="res://scripts/painel_ajustes.gd" id="5"]
+[ext_resource type="PackedScene" path="res://cenas/bola.tscn" id="6"]
 
 [sub_resource type="ProceduralSkyMaterial" id="mat_ceu"]
 
@@ -30,14 +31,21 @@ shadow_enabled = true
 [node name="Carro" parent="." instance=ExtResource("2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 
+[node name="Bola" parent="." instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.92, -15)
+carro_caminho = NodePath("../Carro")
+
 [node name="Camera" type="Camera3D" parent="."]
 fov = 90.0
 script = ExtResource("3")
 alvo_caminho = NodePath("../Carro")
+bola_caminho = NodePath("../Bola")
 
 [node name="Hud" type="CanvasLayer" parent="."]
 script = ExtResource("4")
 carro_caminho = NodePath("../Carro")
+bola_caminho = NodePath("../Bola")
+camera_caminho = NodePath("../Camera")
 
 [node name="Velocidade" type="Label" parent="Hud"]
 offset_left = 20.0
@@ -80,3 +88,4 @@ theme_override_font_sizes/font_size = 16
 script = ExtResource("5")
 carro_caminho = NodePath("../Carro")
 camera_caminho = NodePath("../Camera")
+bola_caminho = NodePath("../Bola")

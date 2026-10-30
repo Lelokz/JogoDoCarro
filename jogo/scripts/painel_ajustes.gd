@@ -4,6 +4,7 @@ extends CanvasLayer
 
 @export var carro_caminho: NodePath
 @export var camera_caminho: NodePath
+@export var bola_caminho: NodePath
 
 const SALVO_PROJETO := "res://ajustes/carro.json"
 const SALVO_JOGO := "user://carro.json"
@@ -42,6 +43,13 @@ const AJUSTES := [
 	["carro", "aceleracao_boost", "Força do boost (m/s²)", 2.0, 30.0, 0.1],
 	["carro", "gasto_boost", "Gasto do boost (por s)", 5.0, 100.0, 0.5],
 	["carro", "recarga_boost", "Recarga do boost (por s)", 0.0, 100.0, 1.0],
+	["titulo", "Bola"],
+	["bola", "empurrao_extra", "Empurrão extra do toque", 0.0, 3.0, 0.05],
+	["bola", "physics_material_override:bounce", "Quique da bola", 0.0, 1.0, 0.01],
+	["bola", "physics_material_override:friction", "Atrito da bola", 0.0, 2.0, 0.01],
+	["bola", "mass", "Peso da bola", 5.0, 180.0, 1.0],
+	["bola", "linear_damp", "Resistência do ar da bola", 0.0, 1.0, 0.01],
+	["bola", "velocidade_maxima", "Velocidade máxima da bola (m/s)", 10.0, 150.0, 1.0],
 	["titulo", "Câmera"],
 	["camera", "distancia", "Distância (m)", 1.5, 6.0, 0.1],
 	["camera", "altura", "Altura (m)", 0.3, 3.0, 0.05],
@@ -65,7 +73,7 @@ var molas := Label.new()
 
 func _ready() -> void:
 	layer = 10
-	alvos = {"carro": get_node(carro_caminho), "camera": get_node(camera_caminho), "mundo": self}
+	alvos = {"carro": get_node(carro_caminho), "camera": get_node(camera_caminho), "bola": get_node(bola_caminho), "mundo": self}
 	montar()
 	padrao = ler_tudo()
 	carregar()
@@ -126,9 +134,9 @@ func montar() -> void:
 		valor.custom_minimum_size.x = 64
 		valor.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		deslizador.value_changed.connect(func(v: float) -> void:
-			alvos[a[0]].set(a[1], v)
+			alvos[a[0]].set_indexed(a[1], v)
 			valor.text = formatar(v, a[5]))
-		deslizador.value = alvos[a[0]].get(a[1])
+		deslizador.value = alvos[a[0]].get_indexed(a[1])
 		deslizadores[a[0] + "/" + a[1]] = deslizador
 		linha.add_child(nome)
 		linha.add_child(deslizador)
@@ -160,7 +168,7 @@ func ler_tudo() -> Dictionary:
 		var partes: PackedStringArray = chave.split("/")
 		if not dados.has(partes[0]):
 			dados[partes[0]] = {}
-		dados[partes[0]][partes[1]] = alvos[partes[0]].get(partes[1])
+		dados[partes[0]][partes[1]] = alvos[partes[0]].get_indexed(partes[1])
 	return dados
 
 

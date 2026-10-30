@@ -81,6 +81,7 @@ var rastro: CPUParticles3D
 
 
 func _ready() -> void:
+	add_to_group("carros")
 	ponto_inicial = global_transform
 	criar_rastro()
 

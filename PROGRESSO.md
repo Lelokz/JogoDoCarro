@@ -8,6 +8,24 @@ Diário do projeto. O mais novo fica em cima.
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
+## 30/10/2026: Etapa 4, a bola
+Números conferidos no código do RocketSim.
+- **Bola:** 1,82 m de diâmetro, peso 30 (carro 180), quica 60%, máximo 60 m/s, gira no máximo 6 rad/s.
+  Fica 15 m na frente de onde o carro nasce.
+  - Solta de 9,1 m: quica 3,1 → 1,1 → 0,4 m.
+  - Rolando no chão perde velocidade (20 → 6,6 m/s em 5 s): como não pode girar mais que 6 rad/s,
+    em alta velocidade ela arrasta em vez de rolar. A referência é igual. Ajustável no F1 (atrito).
+- **Empurrão extra do toque** (igual à referência): além da batida normal, a bola ganha velocidade
+  na direção do toque, mais forte quando o toque é fraco, menos pra cima, no máximo a cada 2 quadros.
+  - Carro a 51 km/h → bola a 76 km/h · com boost (83 km/h) → bola a 123 km/h · mortal na bola → 115 km/h rasteira.
+- **Câmera da bola** (C ou Y): fica atrás do carro na linha carro → bola, olhando pra bola.
+- **G** (ou direcional pra cima): bola aparece 10 m na frente do carro. **T** volta carro e bola pro início.
+- Na tela: velocidade da bola, do último toque e qual câmera tá ligada.
+- F1 ganhou a seção "Bola": empurrão extra, quique, atrito, peso, resistência do ar, velocidade máxima.
+- Tirei a resistência do ar que o Godot põe sozinho em tudo (10%/s): o RL não tem isso no carro.
+  O carro ficou um pouco mais solto: 14,1 m/s sem boost (era 13,9), pulo 2,3 m (era 2,2),
+  supersônico em 1,6 s (era 1,8).
+
 ## 30/10/2026: Etapa 3, pulo, mortal, controle no ar e boost
 Números de partida conferidos no código do RocketSim (simulação aberta da física, feita pela comunidade).
 - **Pulo:** toque rápido sobe 0,76 m, segurando sobe 2,2 m, duplo pulo 4,2 m.
@@ -80,4 +98,4 @@ Fica salvo em `jogo/ajustes/carro.json` (o jogo abre com ele).
 - Freio 6 e desacelera solto 0 foram sem querer: voltei pra 35 e 5,25
 - Velocidade máxima 23 → 40 (por enquanto não muda nada: sem boost o motor vai só até 14,1)
 
-**Próximo passo:** tu testar o pulo, o mortal e o boost → Etapa 4 (a bola).
+**Próximo passo:** tu testar a bola → Etapa 5 (a arena: paredes curvas, gols, placar).
