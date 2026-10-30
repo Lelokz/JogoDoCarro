@@ -42,6 +42,12 @@ Diário do projeto. O mais novo fica em cima.
 - Foi feito de madrugada sem abrir janela: **o visual ainda não foi visto**, só a física foi medida.
 
 ## Ajustes que ficaram bons
-(quando a gente achar valores de gravidade/suspensão que ficaram gostosos, anota aqui)
+Fica salvo em `jogo/ajustes/carro.json` (o jogo abre com ele).
+
+**30/10/2026, 1º ajuste do Lelokz** (o que mudou em relação aos valores de partida):
+- Câmera: distância 2,8 → 2,5, altura 1,1 → 1,3, FOV 90 → 100 (com a distância fixa, o 100 ficou bom)
+- Curva 1,0 → 1,15, aderência 60 → 54, giro no freio de mão 1,4 → 1,3
+- Freio 35 → 6, desacelera solto 5,25 → 0 (o carro não perde velocidade sozinho) — confirmar se foi de propósito
+- Velocidade máxima 23 → 40 (por enquanto não muda nada: sem boost o motor vai só até 14,1)
 
 **Próximo passo:** tu brincar no painel F1 e salvar o que ficar bom → Etapa 3 (pulo, ar, boost).

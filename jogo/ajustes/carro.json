@@ -1,0 +1,26 @@
+{
+	"camera": {
+		"altura": 1.3,
+		"distancia": 2.5,
+		"fov": 100.0,
+		"suavidade": 8.0
+	},
+	"carro": {
+		"aderencia": 54.0,
+		"aderencia_freio_mao": 8.0,
+		"amortecedor": 3000.0,
+		"batente": 20000.0,
+		"curso_mola": 0.12,
+		"desaceleracao_solto": 0.0,
+		"forca_motor": 1.0,
+		"freio": 6.0,
+		"giro_freio_mao": 1.3,
+		"grude": 3.25,
+		"mola": 8000.0,
+		"multiplicador_curva": 1.15,
+		"velocidade_maxima": 40.0
+	},
+	"mundo": {
+		"gravidade": 6.5
+	}
+}
