@@ -1,15 +1,19 @@
 extends RigidBody3D
 
 # Valores de partida: números da wiki RLBot convertidos de cm pra metros.
-# São pra ajustar jogando (o painel F1 vem na etapa 2).
+# São pra ajustar jogando no painel F1.
 
 @export_group("Suspensão")
-@export var mola := 5000.0          # N/m em cada roda
-@export var amortecedor := 700.0    # N·s/m em cada roda
+@export var mola := 8000.0          # N/m em cada roda
+@export var amortecedor := 3000.0   # N·s/m em cada roda
 @export var curso_mola := 0.12      # m
 @export var raio_roda := 0.17       # m
+@export var batente := 20000.0      # N/m a mais quando a mola passa do curso (pouso não bate seco)
+@export var grude := 3.25           # m/s² puxando o carro contra o chão enquanto as rodas tocam
 
 @export_group("Direção")
+@export var forca_motor := 1.0            # multiplica a tabela ACELERACAO
+@export var multiplicador_curva := 1.0    # multiplica a tabela CURVATURA
 @export var freio := 35.0                 # m/s²
 @export var desaceleracao_solto := 5.25   # m/s², sem acelerar nem frear
 @export var velocidade_maxima := 23.0     # m/s
@@ -71,6 +75,8 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 		compressao[i] = alcance - origem.distance_to(toque.position)
 		var velocidade_compressao: float = (compressao[i] - anterior) / dt
 		var forca := maxf(mola * compressao[i] + amortecedor * velocidade_compressao, 0.0)
+		if compressao[i] > curso_mola:
+			forca += batente * (compressao[i] - curso_mola)
 		estado.apply_force(cima * forca, origem - estado.transform.origin)
 
 	var v := estado.linear_velocity
@@ -89,15 +95,16 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 		if acelerador != 0.0 and absf(v_frente) > 0.1 and signf(acelerador) != signf(v_frente):
 			dv = -signf(v_frente) * minf(freio * dt, absf(v_frente))
 		elif acelerador != 0.0:
-			dv = acelerador * curva(ACELERACAO, absf(v_frente)) * dt
+			dv = acelerador * curva(ACELERACAO, absf(v_frente)) * forca_motor * dt
 		else:
 			dv = -signf(v_frente) * minf(desaceleracao_solto * dt, absf(v_frente))
 		v += frente * dv * contato
 
 		var limite_lado := (aderencia_freio_mao if freio_mao else aderencia) * dt * contato
 		v -= lado * clampf(v_lado, -limite_lado, limite_lado)
+		v -= normal_chao * grude * dt * contato
 
-		var giro := -direcao * curva(CURVATURA, absf(v_frente)) * v_frente
+		var giro := -direcao * curva(CURVATURA, absf(v_frente)) * multiplicador_curva * v_frente
 		if freio_mao:
 			giro *= giro_freio_mao
 		var w := estado.angular_velocity
@@ -137,7 +144,7 @@ func atualizar_rodas_desenhadas(delta: float) -> void:
 	var angulo := -Input.get_axis("esquerda", "direita") * angulo_visual_roda
 	for i in 4:
 		var pneu: Node3D = rodas[i].get_node("Pneu")
-		var distancia: float = curso_mola - compressao[i]
+		var distancia := maxf(curso_mola - compressao[i], 0.0)
 		pneu.position = Vector3(0.0, -distancia, 0.0)
 		var b := Basis(Vector3.RIGHT, giro_pneu) * Basis(Vector3.BACK, PI / 2.0)
 		if i < 2:

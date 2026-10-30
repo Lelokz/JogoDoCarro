@@ -7,6 +7,23 @@ Diário do projeto. O mais novo fica em cima.
 - `./editor.sh`: abre o projeto no editor do Godot
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 
+## 30/10/2026 (madrugada): Etapa 2, suspensão + painel F1
+- Tu testou a etapa 1: "ficou legal". Pediu FOV menor.
+  - O FOV não mudava: era a câmera ficando até ~2 m pra trás quando acelerava (parecia abrir).
+    Agora a distância é sempre a mesma, só o giro da câmera é suave. FOV 100 → 90.
+- **Painel F1:** barrinhas pra gravidade, mola, amortecedor, curso, batente, grude, motor,
+  velocidade máxima, freio, curva, aderência, freio de mão e câmera (distância, altura, FOV, suavidade).
+  Mostra também quanto cada mola tá apertada (FE/FD/TE/TD).
+  Botões: Salvar (vai pra `jogo/ajustes/carro.json` e abre assim da próxima vez),
+  Voltar pro salvo, Valores de partida.
+- Suspensão nova: **batente** (força extra no fim do curso) e **grude no chão** (3,25 m/s², ajuda nas paredes depois).
+- Medido numa queda de 5 m (o carro chega a 8 m/s):
+  - mola 5000 / amortecedor 700 (antigo): a mola passa de 158% do curso, a caixa bate no chão.
+  - batente mais forte não ajuda: só faz quicar mais.
+  - **mola 8000 / amortecedor 3000 (novo de partida): 90% do curso, não quica, assenta em 0,9 s.**
+- Saindo da rampa de 25° o carro às vezes cai de teto e fica lá: normal até a etapa 3
+  (controle no ar e pulo pra desvirar). Por enquanto: R.
+
 ## 30/10/2026 (madrugada): Etapas 0 e 1
 - Godot 4.7.2 baixado (conferido pelo SHA512) em `Godot/`. Projeto em `jogo/`.
 - Física: Jolt, 120 Hz, gravidade 6,5 m/s², interpolação ligada (fica liso em monitor de qualquer Hz).
@@ -23,7 +40,8 @@ Diário do projeto. O mais novo fica em cima.
   (a referência dá 6,0), freio de mão 4 m. Saiu da rampa de 25° a 6,8 m de altura e capotou
   na queda (normal: ainda não tem controle no ar).
 - Foi feito de madrugada sem abrir janela: **o visual ainda não foi visto**, só a física foi medida.
-- **Próximo passo:** tu testar dirigindo e dizer o que achou → Etapa 2 (suspensão + painel F1).
 
 ## Ajustes que ficaram bons
 (quando a gente achar valores de gravidade/suspensão que ficaram gostosos, anota aqui)
+
+**Próximo passo:** tu brincar no painel F1 e salvar o que ficar bom → Etapa 3 (pulo, ar, boost).

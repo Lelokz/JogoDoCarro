@@ -7,7 +7,7 @@ var carro: RigidBody3D
 
 func _ready() -> void:
 	carro = get_node(carro_caminho)
-	$Controles.text = "W/S ou RT/LT: acelerar e ré   ·   A/D ou analógico: virar\nShift ou X: freio de mão   ·   R ou Back: desvirar   ·   T: voltar ao início   ·   F11: tela cheia"
+	$Controles.text = "W/S ou RT/LT: acelerar e ré   ·   A/D ou analógico: virar\nShift ou X: freio de mão   ·   R ou Back: desvirar   ·   T: voltar ao início   ·   F1: painel de ajustes   ·   F11: tela cheia"
 
 
 func _process(_delta: float) -> void:

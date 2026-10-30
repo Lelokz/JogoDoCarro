@@ -11,6 +11,7 @@ func _ready() -> void:
 	adicionar("desvirar", [KEY_R], [JOY_BUTTON_BACK], [])
 	adicionar("voltar_inicio", [KEY_T], [], [])
 	adicionar("tela_cheia", [KEY_F11], [], [])
+	adicionar("painel", [KEY_F1], [], [])
 
 
 func adicionar(nome: String, teclas: Array, botoes: Array, eixos: Array) -> void:
