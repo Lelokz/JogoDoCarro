@@ -6,6 +6,7 @@ Diário do projeto. O mais novo fica em cima.
 - `./jogar.sh`: abre o jogo no campo de teste
 - `./editor.sh`: abre o projeto no editor do Godot
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
+- Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
 ## 30/10/2026 (madrugada): Etapa 2, suspensão + painel F1
 - Tu testou a etapa 1: "ficou legal". Pediu FOV menor.
