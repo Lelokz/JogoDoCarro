@@ -100,6 +100,11 @@ var rastro: CPUParticles3D
 func _ready() -> void:
 	add_to_group("carros")
 	ponto_inicial = global_transform
+	$Corpo.material_override = Materiais.liso(Color(0.2, 0.45, 0.95))
+	$Cabine.material_override = Materiais.liso(Color(0.08, 0.1, 0.16), 0.2)
+	var pneu := Materiais.liso(Color(0.07, 0.07, 0.07))
+	for roda in rodas:
+		roda.get_node("Pneu").material_override = pneu
 	criar_rastro()
 
 
@@ -402,9 +407,7 @@ func definir_simulacao(ligada: bool) -> void:
 
 
 func definir_time(time: String) -> void:
-	var cor := StandardMaterial3D.new()
-	cor.albedo_color = Color(0.2, 0.45, 0.95) if time == "azul" else Color(1.0, 0.5, 0.12)
-	$Corpo.material_override = cor
+	$Corpo.material_override = Materiais.liso(Color(0.2, 0.45, 0.95) if time == "azul" else Color(1.0, 0.5, 0.12))
 
 
 func estimar_rodas() -> void:
@@ -483,11 +486,7 @@ func criar_rastro() -> void:
 	bolinha.height = 0.18
 	bolinha.radial_segments = 8
 	bolinha.rings = 4
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.vertex_color_use_as_albedo = true
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	bolinha.material = material
+	bolinha.material = Materiais.rastro()
 	rastro.mesh = bolinha
 	var cores := Gradient.new()
 	cores.set_color(0, Color(1.0, 0.8, 0.3, 1.0))

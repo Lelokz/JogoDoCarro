@@ -1,7 +1,6 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/bola.gd" id="1"]
-[ext_resource type="Shader" path="res://shaders/bola.gdshader" id="2"]
 
 [sub_resource type="PhysicsMaterial" id="material_fisico"]
 friction = 0.35
@@ -10,11 +9,7 @@ bounce = 0.6
 [sub_resource type="SphereShape3D" id="forma"]
 radius = 0.9125
 
-[sub_resource type="ShaderMaterial" id="material"]
-shader = ExtResource("2")
-
 [sub_resource type="SphereMesh" id="malha"]
-material = SubResource("material")
 radius = 0.9125
 height = 1.825
 

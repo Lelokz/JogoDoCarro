@@ -11,6 +11,23 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica; `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 30/10/2026: carregamento rápido no navegador + boost sem Ctrl
+- Tu viu no site: "Treinar sozinho" travava ~20 s antes de abrir; e a aba fechou do nada jogando.
+- **Aba fechando:** era o boost no Ctrl + acelerar no W = **Ctrl+W, que fecha a aba** (o site não consegue
+  impedir). Boost agora: **botão esquerdo do mouse, F ou B**. (Ctrl+R e Ctrl+T também eram perigosos.)
+- **Os 20 s:** medido no navegador com a placa de vídeo, sem a memória de shaders da NVIDIA:
+  carregar a cena 0,3 s, montar a arena 0,1 s, **primeiro quadro 10,8 s** = o navegador compilando os
+  shaders (os "programas" de cada material). Desligar sombra/céu/MSAA quase não muda; com **um material só
+  caiu pra 3,2 s** → o que pesa é a quantidade de materiais diferentes.
+  - Agora todos os materiais saem de **só 2 shaders** (`superficie.gdshader` sólido e `transparente.gdshader`),
+    escolhendo o desenho por um número ("tipo"). Fábrica: `scripts/materiais.gd`. Visual igual (conferido em foto).
+  - **Tela de carregamento** quando o jogo abre: monta a arena escondida e mostra aos poucos
+    (céu, chão/carros, vidro, boost, resto), com barra de progresso; os botões aparecem quando termina.
+    A tela de abertura do Godot (logo deles) virou fundo escuro.
+  - Resultado (pior caso, 1ª vez): o jogo abre a tela de carregamento em ~3 s, carrega por ~7 s,
+    e **"Treinar sozinho" abre em 0,15 s** (era 11 s). Da 2ª vez em diante o navegador/placa lembram e é mais rápido.
+- Site publicado de novo.
+
 ## 30/10/2026: o jogo no navegador (passo 1 de "jogar pela internet sem baixar nada")
 - Decidido contigo: **tudo de graça**. Site no Firebase Hosting; salas com código; os navegadores conversam
   direto (WebRTC) e o Firebase só faz o "aperto de mão"; STUN do Google + TURN grátis do ExpressTURN

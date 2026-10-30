@@ -1,4 +1,4 @@
-// Desenho da arena, usado no chão (sólido) e nas paredes (vidro):
+// Desenho da arena, usado no chão (superficie.gdshader) e nas paredes (transparente.gdshader):
 // grade em todas as superfícies, metade azul e metade laranja,
 // e no chão: linha do meio, círculo central e linha do gol.
 
@@ -11,11 +11,7 @@ uniform float meia_largura_gol = 9.0;
 
 varying vec3 posicao_mundo;
 varying vec3 normal_mundo;
-
-void vertex() {
-	posicao_mundo = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	normal_mundo = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
-}
+varying vec3 posicao_local;
 
 float grade(vec2 p, float passo, float largura) {
 	vec2 distancia = abs(fract(p / passo - 0.5) - 0.5) * passo;

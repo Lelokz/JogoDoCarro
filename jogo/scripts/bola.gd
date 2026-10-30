@@ -29,6 +29,7 @@ var tocando_carro := false
 
 func _ready() -> void:
 	carro = get_node(carro_caminho)
+	$Desenho.material_override = Materiais.bola()
 	ponto_inicial = global_transform
 	contact_monitor = true
 	max_contacts_reported = 4

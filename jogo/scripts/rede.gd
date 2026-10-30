@@ -14,6 +14,7 @@ signal ajustes_chegaram(dados: Dictionary)
 var modo := "sozinho"   # "sozinho", "host" ou "cliente"
 var aviso := ""         # recado pro menu (ex.: "o host fechou a partida")
 var leu_linha_de_comando := false   # o -- --hospedar / --entrar só vale quando o jogo abre
+var cena_arena: PackedScene   # carregada no menu e guardada: o "Treinar sozinho" não espera carregar
 var ajustes_do_host := {}   # quem entrou guarda os ajustes do carro que o host mandou
 # teste: finge internet lenta segurando cada mensagem que sai (-- --atraso=60 = 60 ms)
 var atraso := 0.0
@@ -44,7 +45,10 @@ func enviar(mensagem: Callable) -> void:
 
 func treinar(cena := "res://cenas/arena.tscn") -> void:
 	modo = "sozinho"
-	get_tree().change_scene_to_file(cena)
+	if cena == "res://cenas/arena.tscn" and cena_arena:
+		get_tree().change_scene_to_packed(cena_arena)
+	else:
+		get_tree().change_scene_to_file(cena)
 
 
 func hospedar() -> Error:

@@ -16,11 +16,11 @@ const PAREDES := [
 	[Vector3(-45, 3, 0), Vector3(2, 6, 60)],
 ]
 
-var material_grade := ShaderMaterial.new()
+var material_grade: ShaderMaterial
 
 
 func _ready() -> void:
-	material_grade.shader = preload("res://shaders/grade.gdshader")
+	material_grade = Materiais.grade()
 	# ainda não tem os pads de boost (etapa 5): aqui o tanque enche sozinho
 	$Carro.recarga_boost = 20.0
 	criar_bloco(Vector3(0, -0.5, 0), Vector3(TAMANHO_CHAO, 1, TAMANHO_CHAO), Basis())

@@ -9,7 +9,8 @@ func _ready() -> void:
 	adicionar("direita", [KEY_D, KEY_RIGHT], [], [[JOY_AXIS_LEFT_X, 1.0]])
 	adicionar("freio_mao", [KEY_SHIFT], [JOY_BUTTON_X], [])
 	adicionar("pulo", [KEY_SPACE], [JOY_BUTTON_A], [], [MOUSE_BUTTON_RIGHT])
-	adicionar("boost", [KEY_CTRL], [JOY_BUTTON_B], [], [MOUSE_BUTTON_LEFT])
+	# sem Ctrl: no navegador Ctrl+W (boost + acelerar) fecha a aba, e o site não consegue impedir
+	adicionar("boost", [KEY_F], [JOY_BUTTON_B], [], [MOUSE_BUTTON_LEFT])
 	# no ar: W/S e o analógico pra cima/baixo inclinam o nariz
 	adicionar("nariz_baixo", [KEY_W, KEY_UP], [], [[JOY_AXIS_LEFT_Y, -1.0]])
 	adicionar("nariz_cima", [KEY_S, KEY_DOWN], [], [[JOY_AXIS_LEFT_Y, 1.0]])

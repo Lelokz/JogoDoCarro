@@ -463,9 +463,7 @@ func criar_pad(onde: Vector2, grande: bool) -> void:
 	base.mesh.bottom_radius = base.mesh.top_radius
 	base.mesh.height = 0.04
 	base.position.y = 0.02
-	var cor_base := StandardMaterial3D.new()
-	cor_base.albedo_color = Color(0.25, 0.22, 0.2)
-	base.material_override = cor_base
+	base.material_override = Materiais.liso(Color(0.25, 0.22, 0.2))
 	var brilho := MeshInstance3D.new()
 	if grande:
 		brilho.mesh = SphereMesh.new()
@@ -478,12 +476,7 @@ func criar_pad(onde: Vector2, grande: bool) -> void:
 		brilho.mesh.bottom_radius = 0.45
 		brilho.mesh.height = 0.08
 		brilho.position.y = 0.06
-	var cor := StandardMaterial3D.new()
-	cor.albedo_color = Color(1.0, 0.6, 0.15)
-	cor.emission_enabled = true
-	cor.emission = Color(1.0, 0.5, 0.1)
-	cor.emission_energy_multiplier = 2.0
-	brilho.material_override = cor
+	brilho.material_override = Materiais.liso(Color(1.0, 0.6, 0.15), 0.5, Color(1.0, 0.5, 0.1), 2.0)
 	raiz.add_child(base)
 	raiz.add_child(brilho)
 	add_child(raiz)
