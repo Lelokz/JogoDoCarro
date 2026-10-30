@@ -22,6 +22,7 @@ func _ready() -> void:
 	adicionar("tela_cheia", [KEY_F11], [], [])
 	adicionar("painel", [KEY_F1], [], [])
 	adicionar("trocar_mapa", [KEY_F2], [], [])
+	adicionar("menu", [KEY_ESCAPE], [JOY_BUTTON_START], [])
 
 
 func adicionar(nome: String, teclas: Array, botoes: Array, eixos: Array, mouse: Array = []) -> void:
@@ -47,7 +48,11 @@ func adicionar(nome: String, teclas: Array, botoes: Array, eixos: Array, mouse: 
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if evento.is_action_pressed("trocar_mapa"):
+	var cena := get_tree().current_scene
+	var jogando := cena != null and not cena.scene_file_path.ends_with("menu.tscn")
+	if evento.is_action_pressed("menu") and jogando:
+		Rede.sair()
+	if evento.is_action_pressed("trocar_mapa") and jogando and not Rede.online():
 		var na_arena := get_tree().current_scene.scene_file_path.ends_with("arena.tscn")
 		get_tree().change_scene_to_file("res://cenas/campo_teste.tscn" if na_arena else "res://cenas/arena.tscn")
 	if evento.is_action_pressed("tela_cheia"):

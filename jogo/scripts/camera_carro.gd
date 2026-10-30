@@ -44,7 +44,7 @@ func _process(delta: float) -> void:
 func direcao_do_carro(t: Transform3D) -> Vector3:
 	if alvo.rodas_no_chao == 0:
 		# no ar segue pra onde o carro vai, senão a câmera gira junto no mortal
-		var v: Vector3 = alvo.linear_velocity
+		var v: Vector3 = alvo.velocidade()
 		v.y = 0.0
 		return v.normalized() if v.length() > 3.0 else frente_suave
 	var frente := -t.basis.z

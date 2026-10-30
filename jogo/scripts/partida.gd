@@ -1,7 +1,9 @@
 extends Node
 
 # Regras da partida: saída de bola com contagem, gol, placar, cronômetro, prorrogação e pads de boost.
-# O carro é do time azul e ataca o gol laranja (z negativo).
+# Sozinho ou hospedando, a partida roda aqui e o host manda tudo pros outros 60 vezes por segundo.
+# Quem entrou na partida de outro só mostra o que chega (e manda os próprios comandos pro host).
+# O Azul ataca o gol laranja (z negativo); o Laranja ataca o gol azul.
 
 @export var carro_caminho: NodePath
 @export var bola_caminho: NodePath
@@ -13,7 +15,7 @@ const TEMPO_COMEMORACAO := 3.0
 const BOOST_SAIDA := 33.0
 const RAIO_BOLA := 0.9125
 const ALTURA_CARRO := 0.32
-# onde o carro pode começar na saída de bola (sempre olhando pra bola)
+# onde os carros do Azul podem começar na saída de bola; o Laranja usa os mesmos lugares espelhados
 const SAIDAS := [Vector3(0, 0, 42), Vector3(-2.5, 0, 36), Vector3(2.5, 0, 36), Vector3(-20, 0, 25), Vector3(20, 0, 25)]
 # pads: grandes enchem o tanque e voltam em 10 s; pequenos dão 12 e voltam em 4 s
 const PADS_GRANDES := [Vector2(-33, -38), Vector2(33, -38), Vector2(-33, 38), Vector2(33, 38), Vector2(-36, 0), Vector2(36, 0)]
@@ -24,20 +26,29 @@ const PADS_PEQUENOS := [
 	Vector2(-24, -30), Vector2(24, -30), Vector2(-24, 30), Vector2(24, 30),
 	Vector2(-8, -42), Vector2(8, -42), Vector2(-8, 42), Vector2(8, 42),
 ]
+const CENA_CARRO := preload("res://cenas/carro.tscn")
+# quem entrou mostra a partida um pouquinho atrás (6 quadros do host = 50 ms),
+# pra sempre ter dois estados pra misturar e o movimento ficar liso
+const ATRASO_IMAGEM := 6.0
 
 enum Estado { CONTAGEM, JOGANDO, GOL, FIM }
 
-var carro: RigidBody3D
+var carro: RigidBody3D   # o carro de quem joga neste PC
 var bola: RigidBody3D
 var hud: CanvasLayer
+var carros := {}   # id do jogador → carro
+var times := {}    # id do jogador → "azul" ou "laranja"
 var estado := Estado.CONTAGEM
 var tempo_estado := 0.0
 var relogio := TEMPO_PARTIDA
 var prorrogacao := false
 var acabou := false
 var placar := {"azul": 0, "laranja": 0}
+var texto_placar := ""
 var pads := []
 var tempo_total := 0.0
+var estados_recebidos := []
+var quadro_imagem := -1.0
 
 
 func _ready() -> void:
@@ -48,10 +59,30 @@ func _ready() -> void:
 		criar_pad(p, true)
 	for p in PADS_PEQUENOS:
 		criar_pad(p, false)
+	var eu := multiplayer.get_unique_id()
+	carros[eu] = carro
+	if Rede.modo == "cliente":
+		carro.definir_simulacao(false)
+		bola.freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
+		bola.freeze = true
+		Rede.estado_chegou.connect(estado_chegou)
+		mensagem("Entrando na partida…")
+		return
+	times[eu] = "azul"
+	carro.definir_time("azul")
+	if Rede.modo == "host":
+		multiplayer.peer_connected.connect(jogador_entrou)
+		multiplayer.peer_disconnected.connect(jogador_saiu)
+		Rede.comandos_chegaram.connect(comandos_chegaram)
 	saida_de_bola()
 
 
 func _physics_process(delta: float) -> void:
+	if Rede.modo == "cliente":
+		Rede.receber_comandos.rpc_id(1, carro.comandos.para_rede())
+		mostrar_estado()
+		return
+
 	tempo_estado += delta
 	tempo_total += delta
 	atualizar_pads()
@@ -83,6 +114,8 @@ func _physics_process(delta: float) -> void:
 			if Input.is_action_just_pressed("ui_accept"):
 				nova_partida()
 	atualizar_placar()
+	if Rede.modo == "host" and Engine.get_physics_frames() % 2 == 0:
+		Rede.receber_estado.rpc(montar_estado())
 
 
 func ver_gol() -> void:
@@ -110,9 +143,11 @@ func acabar_tempo() -> void:
 func fim_de_jogo() -> void:
 	estado = Estado.FIM
 	tempo_estado = 0.0
-	carro.travado = true
+	for c in carros.values():
+		c.travado = true
 	var vencedor := "o Azul venceu!" if placar["azul"] > placar["laranja"] else "o Laranja venceu!"
-	mensagem("FIM DE JOGO\nAzul %d × %d Laranja: %s\nEnter: jogar de novo" % [placar["azul"], placar["laranja"], vencedor])
+	var de_novo := "O host aperta Enter pra jogar de novo" if Rede.online() else "Enter: jogar de novo"
+	mensagem("FIM DE JOGO\nAzul %d × %d Laranja: %s\n%s" % [placar["azul"], placar["laranja"], vencedor, de_novo])
 
 
 func nova_partida() -> void:
@@ -124,11 +159,14 @@ func nova_partida() -> void:
 
 
 func saida_de_bola() -> void:
-	var posicao: Vector3 = SAIDAS.pick_random() + Vector3.UP * ALTURA_CARRO
-	var para_bola := Vector3(-posicao.x, 0, -posicao.z)
-	carro.colocar_em(Transform3D(Basis.looking_at(para_bola), posicao))
-	carro.boost = BOOST_SAIDA
-	carro.travado = true
+	var lugares := SAIDAS.duplicate()
+	lugares.shuffle()
+	var quantos := {"azul": 0, "laranja": 0}
+	for id in carros:
+		var time: String = times[id]
+		colocar_na_saida(carros[id], time, lugares[quantos[time] % lugares.size()])
+		quantos[time] += 1
+		carros[id].travado = true
 	bola.freeze = true
 	bola.global_transform = Transform3D(Basis(), Vector3.UP * RAIO_BOLA)
 	bola.linear_velocity = Vector3.ZERO
@@ -138,11 +176,164 @@ func saida_de_bola() -> void:
 	tempo_estado = 0.0
 
 
+func colocar_na_saida(quem: RigidBody3D, time: String, lugar: Vector3) -> void:
+	var posicao := lugar if time == "azul" else Vector3(-lugar.x, 0, -lugar.z)
+	posicao.y = ALTURA_CARRO
+	var para_bola := Vector3(-posicao.x, 0, -posicao.z)
+	quem.colocar_em(Transform3D(Basis.looking_at(para_bola), posicao))
+	quem.boost = BOOST_SAIDA
+
+
 func comecar() -> void:
-	carro.travado = false
+	for c in carros.values():
+		c.travado = false
 	bola.freeze = false
 	estado = Estado.JOGANDO
 	tempo_estado = 0.0
+
+
+func jogador_entrou(id: int) -> void:
+	var novo: RigidBody3D = CENA_CARRO.instantiate()
+	novo.name = "Carro_%d" % id
+	novo.controle_local = false
+	get_parent().add_child(novo)
+	copiar_ajustes(carro, novo)
+	var no_azul := times.values().count("azul")
+	var time := "laranja" if no_azul > times.values().count("laranja") else "azul"
+	times[id] = time
+	carros[id] = novo
+	novo.definir_time(time)
+	colocar_na_saida(novo, time, SAIDAS[(times.values().count(time) - 1) % SAIDAS.size()])
+	novo.travado = estado == Estado.CONTAGEM or estado == Estado.FIM
+
+
+func jogador_saiu(id: int) -> void:
+	if carros.has(id):
+		carros[id].queue_free()
+		carros.erase(id)
+		times.erase(id)
+
+
+func comandos_chegaram(id: int, dados: Array) -> void:
+	if carros.has(id):
+		carros[id].comandos.de_rede(dados)
+
+
+func copiar_ajustes(de: RigidBody3D, para: RigidBody3D) -> void:
+	# os ajustes do carro (os do painel F1) valem pra todo mundo: são os do host
+	for propriedade in de.get_property_list():
+		var uso: int = propriedade["usage"]
+		if uso & PROPERTY_USAGE_SCRIPT_VARIABLE and uso & PROPERTY_USAGE_STORAGE:
+			para.set(propriedade["name"], de.get(propriedade["name"]))
+
+
+func montar_estado() -> Array:
+	var lista := []
+	for id in carros:
+		var c: RigidBody3D = carros[id]
+		lista.append([id, times[id], c.global_position, c.global_basis.get_rotation_quaternion(), c.linear_velocity, c.boost, c.boostando, c.supersonico, c.comandos.direcao])
+	var acesos := 0
+	for i in pads.size():
+		if pads[i]["brilho"].visible:
+			acesos |= 1 << i
+	var dados_bola := [bola.global_position, bola.global_basis.get_rotation_quaternion(), bola.linear_velocity, bola.visible]
+	return [Engine.get_physics_frames(), lista, dados_bola, texto_placar, hud.get_node("Mensagem").text, acesos]
+
+
+func estado_chegou(dados: Array) -> void:
+	if not estados_recebidos.is_empty() and dados[0] <= estados_recebidos[-1][0]:
+		return
+	estados_recebidos.append(dados)
+	if estados_recebidos.size() > 30:
+		estados_recebidos.pop_front()
+
+
+func mostrar_estado() -> void:
+	if estados_recebidos.is_empty():
+		return
+	var alvo: float = estados_recebidos[-1][0] - ATRASO_IMAGEM
+	if quadro_imagem < 0.0 or absf(quadro_imagem - alvo) > 60.0:
+		quadro_imagem = alvo
+	else:
+		# anda um quadro por quadro, corrigindo devagar pra não dar tranco
+		quadro_imagem += 1.0 + clampf((alvo - quadro_imagem) * 0.05, -0.5, 0.5)
+	var a: Array = estados_recebidos[0]
+	var b: Array = []
+	for e in estados_recebidos:
+		if e[0] <= quadro_imagem:
+			a = e
+		else:
+			b = e
+			break
+	if b.is_empty():
+		b = a
+	var t := 0.0 if b[0] == a[0] else clampf((quadro_imagem - a[0]) / float(b[0] - a[0]), 0.0, 1.0)
+	aplicar_estado(a, b, t)
+
+
+func aplicar_estado(a: Array, b: Array, t: float) -> void:
+	var em_b := {}
+	for dados in b[1]:
+		em_b[dados[0]] = dados
+	var presentes := {}
+	for da in a[1]:
+		var id: int = da[0]
+		var db: Array = em_b.get(id, da)
+		var c := carro_do_jogador(id, db[1])
+		var posicao: Vector3 = da[2].lerp(db[2], t)
+		var pulou_longe := c.global_position.distance_to(posicao) > 5.0
+		c.global_transform = Transform3D(Basis(da[3].slerp(db[3], t)), posicao)
+		if pulou_longe:
+			c.reset_physics_interpolation()   # saída de bola: aparece no lugar novo sem deslizar
+		c.velocidade_rede = da[4].lerp(db[4], t)
+		c.boost = db[5]
+		c.boostando = db[6]
+		c.supersonico = db[7]
+		if not c.controle_local:
+			c.comandos.direcao = db[8]
+		presentes[id] = true
+	for id in carros.keys():
+		if not presentes.has(id) and carros[id] != carro:
+			carros[id].queue_free()
+			carros.erase(id)
+			times.erase(id)
+
+	var ba: Array = a[2]
+	var bb: Array = b[2]
+	var posicao_bola: Vector3 = ba[0].lerp(bb[0], t)
+	var bola_pulou := bola.global_position.distance_to(posicao_bola) > 5.0
+	bola.global_transform = Transform3D(Basis(ba[1].slerp(bb[1], t)), posicao_bola)
+	if bola_pulou:
+		bola.reset_physics_interpolation()
+	bola.velocidade_rede = ba[2].lerp(bb[2], t)
+	bola.visible = bb[3]
+
+	texto_placar = b[3]
+	hud.get_node("Placar").text = texto_placar + linha_do_time()
+	mensagem(b[4])
+	for i in pads.size():
+		pads[i]["brilho"].visible = b[5] & (1 << i) != 0
+
+
+func carro_do_jogador(id: int, time: String) -> RigidBody3D:
+	if not carros.has(id):
+		var novo: RigidBody3D = CENA_CARRO.instantiate()
+		novo.name = "Carro_%d" % id
+		novo.controle_local = false
+		get_parent().add_child(novo)
+		novo.definir_simulacao(false)
+		carros[id] = novo
+	if times.get(id, "") != time:
+		times[id] = time
+		carros[id].definir_time(time)
+	return carros[id]
+
+
+func linha_do_time() -> String:
+	if not Rede.online():
+		return ""
+	var meu: String = times.get(multiplayer.get_unique_id(), "")
+	return "\ntu: %s" % meu.capitalize() if meu != "" else ""
 
 
 func criar_pad(onde: Vector2, grande: bool) -> void:
@@ -189,16 +380,19 @@ func criar_pad(onde: Vector2, grande: bool) -> void:
 
 
 func atualizar_pads() -> void:
-	var agora := tempo_total
-	var p := carro.global_position
 	for pad in pads:
-		var ativo: bool = agora >= pad["volta_em"]
+		var ativo: bool = tempo_total >= pad["volta_em"]
 		pad["brilho"].visible = ativo
-		if not ativo or carro.boost >= 100.0 or p.y > 2.5:
+		if not ativo:
 			continue
-		if Vector2(p.x, p.z).distance_to(pad["onde"]) < pad["raio"]:
-			carro.boost = minf(carro.boost + pad["quanto"], 100.0)
-			pad["volta_em"] = agora + pad["espera"]
+		for c in carros.values():
+			var p: Vector3 = c.global_position
+			if c.boost >= 100.0 or p.y > 2.5:
+				continue
+			if Vector2(p.x, p.z).distance_to(pad["onde"]) < pad["raio"]:
+				c.boost = minf(c.boost + pad["quanto"], 100.0)
+				pad["volta_em"] = tempo_total + pad["espera"]
+				break
 
 
 func mensagem(texto: String) -> void:
@@ -207,4 +401,5 @@ func mensagem(texto: String) -> void:
 
 func atualizar_placar() -> void:
 	var tempo := "PRORROGAÇÃO" if prorrogacao else "%d:%02d" % [floori(ceilf(relogio) / 60.0), int(ceilf(relogio)) % 60]
-	hud.get_node("Placar").text = "AZUL  %d  ×  %d  LARANJA\n%s" % [placar["azul"], placar["laranja"], tempo]
+	texto_placar = "AZUL  %d  ×  %d  LARANJA\n%s" % [placar["azul"], placar["laranja"], tempo]
+	hud.get_node("Placar").text = texto_placar + linha_do_time()

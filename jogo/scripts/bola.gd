@@ -23,6 +23,7 @@ var pedido_voltar := false
 var pedido_trazer := false
 var ultimo_toque := 0.0   # velocidade que a bola saiu do último toque (pro HUD e pros testes)
 var velocidade_anterior := Vector3.ZERO
+var velocidade_rede := Vector3.ZERO   # quem entrou numa partida: a bola só aparece onde o host manda
 var tocando_carro := false
 
 
@@ -34,6 +35,8 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	if Rede.online():
+		return   # voltar e trazer a bola são só pra treino
 	if Input.is_action_just_pressed("voltar_inicio"):
 		pedido_voltar = true
 	if Input.is_action_just_pressed("trazer_bola"):
@@ -65,6 +68,10 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 	estado.linear_velocity = estado.linear_velocity.limit_length(velocidade_maxima)
 	estado.angular_velocity = estado.angular_velocity.limit_length(GIRO_MAXIMO)
 	velocidade_anterior = estado.linear_velocity
+
+
+func velocidade() -> Vector3:
+	return velocidade_rede if Rede.modo == "cliente" else linear_velocity
 
 
 func empurrar(estado: PhysicsDirectBodyState3D, quem: RigidBody3D) -> void:

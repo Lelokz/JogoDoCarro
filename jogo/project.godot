@@ -5,12 +5,13 @@ config_version=5
 [application]
 
 config/name="Protótipo - Futebol de Carro"
-run/main_scene="res://cenas/arena.tscn"
+run/main_scene="res://cenas/menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
 
 Controles="*res://scripts/controles.gd"
+Rede="*res://scripts/rede.gd"
 
 [display]
 

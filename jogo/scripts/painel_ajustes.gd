@@ -82,7 +82,8 @@ func _ready() -> void:
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if evento.is_action_pressed("painel"):
+	# os ajustes são do host: quem entrou na partida de outro não abre o painel
+	if evento.is_action_pressed("painel") and Rede.modo != "cliente":
 		caixa.visible = not caixa.visible
 
 
@@ -135,7 +136,12 @@ func montar() -> void:
 		valor.custom_minimum_size.x = 64
 		valor.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		deslizador.value_changed.connect(func(v: float) -> void:
-			alvos[a[0]].set_indexed(a[1], v)
+			if a[0] == "carro":
+				# vale pra todos os carros (no multiplayer, os de todo mundo)
+				for c in get_tree().get_nodes_in_group("carros"):
+					c.set_indexed(a[1], v)
+			else:
+				alvos[a[0]].set_indexed(a[1], v)
 			valor.text = formatar(v, a[5]))
 		deslizador.value = alvos[a[0]].get_indexed(a[1])
 		deslizadores[a[0] + "/" + a[1]] = deslizador

@@ -3,10 +3,34 @@
 Diário do projeto. O mais novo fica em cima.
 
 ## Como abrir
-- `./jogar.sh`: abre o jogo no campo de teste
+- `./jogar.sh`: abre o jogo (menu)
+- `./jogar_em_dois.sh`: duas janelas no mesmo PC, uma hospedando e outra entrando (testar o multiplayer sozinho)
+- `./testar_rede.sh`: teste do multiplayer sem tela (host + 2 amigos)
 - `./editor.sh`: abre o projeto no editor do Godot
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
+
+## 30/10/2026: Etapa 6, multiplayer (primeira versão) + paredes de vidro
+- **Paredes de vidro:** tu viu que, com a câmera da bola e o carro na parede, a câmera ficava atrás
+  da parede e não dava pra ver nada. Agora a parede é vidro com a grade desenhada; a curva de baixo
+  fica quase sólida e vai virando vidro pra cima. Chão escuro em volta da arena pra aparecer pelo vidro.
+  Conferido numa foto renderizada: com o carro na parede, dá pra ver o campo inteiro através do vidro.
+- **Menu:** Treinar sozinho · Campo de teste · Hospedar partida · Entrar (endereço do host) · Sair.
+  ESC volta pro menu. O último endereço digitado fica salvo.
+- **Como funciona:** o PC do host roda a física de tudo. Quem entra manda os comandos (120 vezes por segundo)
+  e recebe a posição de tudo (60 vezes por segundo), mostrando 50 ms atrás pra ficar liso.
+  - Porta 7777. Até 6 jogadores (3 contra 3). Os times se dividem sozinhos (host = Azul).
+  - Carro na cor do time. O placar mostra "tu: Azul/Laranja".
+  - Ajustes do carro (F1) são do host e valem pra todos os carros; pros amigos o F1 nem abre.
+  - Online não tem R (desvirar), T (voltar) nem G (trazer a bola): seria roubo. O pulo desvira.
+  - A tela do host mostra o endereço pros amigos digitarem.
+- Por dentro: o carro agora lê "Comandos" (teclado aqui, rede nos carros dos amigos) em vez do teclado direto.
+- Teste sem tela (`./testar_rede.sh`, host + 2 amigos no mesmo PC): os dois entram, times azul/laranja/azul,
+  o carro do amigo anda/pula/usa boost no PC do host e no dele, o placar chega certo, quem sai some.
+- **Ainda falta:** esconder o atraso da internet (etapa 7) — hoje o amigo sente o carro responder com o
+  atraso da internet dele até o host. Na mesma rede de casa quase não se nota.
+- **Pra jogar com amigos de verdade:** eles precisam do jogo (versão Windows, ainda não feita) e de um jeito
+  de chegar no teu PC pela internet (Tailscale/ZeroTier ou abrir a porta 7777 no roteador).
 
 ## 30/10/2026: Etapa 5, a arena
 - **Arena gerada por código** (`scripts/arena.gd`, muda os números e ela muda junto):
@@ -124,4 +148,4 @@ Fica salvo em `jogo/ajustes/carro.json` (o jogo abre com ele).
 - Velocidade máxima 23 → 40: voltei pra 23 na etapa 3 (sem querer também)
 - Força da batida da bola: 80% (a bola ficava rápida demais pro tamanho do campo)
 
-**Próximo passo:** tu testar a arena → Etapa 6 (multiplayer: um vira host, os outros entram).
+**Próximo passo:** tu testar o multiplayer (`./jogar_em_dois.sh`) → versão Windows pros amigos + como conectar pela internet → Etapa 7 (esconder o atraso).

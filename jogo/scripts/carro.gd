@@ -65,6 +65,15 @@ var pedido_voltar := false
 var pedido_pulo := false
 var travado := false   # parado na contagem da saída de bola
 
+# multiplayer: quem joga aqui lê o teclado; o host simula todos os carros;
+# quem entrou numa partida só mostra os carros na posição que o host manda
+var comandos := Comandos.new()
+var controle_local := true
+var simulando := true
+var velocidade_rede := Vector3.ZERO
+var pulos_vistos := -1
+var desviradas_vistas := -1
+
 var boost := 100.0
 var boostando := false
 var tempo_boost_minimo := 0.0
@@ -88,12 +97,20 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if Input.is_action_just_pressed("desvirar"):
-		pedido_desvirar = true
-	if Input.is_action_just_pressed("voltar_inicio"):
-		pedido_voltar = true
-	if Input.is_action_just_pressed("pulo"):
-		pedido_pulo = true
+	if controle_local:
+		comandos.ler_teclado()
+	if simulando:
+		if pulos_vistos >= 0 and comandos.pulos != pulos_vistos:
+			pedido_pulo = true
+		pulos_vistos = comandos.pulos
+		# desvirar e voltar pro início são só pra treino: online seria roubo
+		if desviradas_vistas >= 0 and comandos.desviradas != desviradas_vistas and not Rede.online():
+			pedido_desvirar = true
+		desviradas_vistas = comandos.desviradas
+		if controle_local and not Rede.online() and Input.is_action_just_pressed("voltar_inicio"):
+			pedido_voltar = true
+	else:
+		estimar_rodas()
 	rastro.emitting = boostando
 	atualizar_rodas_desenhadas(delta)
 
@@ -179,9 +196,9 @@ func dirigir(estado: PhysicsDirectBodyState3D, dt: float) -> void:
 	var v_frente := v.dot(frente)
 	var v_lado := v.dot(lado)
 	var contato := rodas_no_chao / 4.0
-	var acelerador := 1.0 if boostando else Input.get_axis("re", "acelerar")
-	var direcao := Input.get_axis("esquerda", "direita")
-	var freio_mao := Input.is_action_pressed("freio_mao")
+	var acelerador := 1.0 if boostando else comandos.acelerador
+	var direcao := comandos.direcao
+	var freio_mao := comandos.freio_mao
 
 	var dv := 0.0
 	if acelerador != 0.0 and absf(v_frente) > 0.1 and signf(acelerador) != signf(v_frente):
@@ -216,10 +233,10 @@ func controlar_no_ar(estado: PhysicsDirectBodyState3D, dt: float) -> void:
 	var direita := base.x
 	var cima := base.y
 	var frente := -base.z
-	var inclinar := -Input.get_axis("nariz_cima", "nariz_baixo")   # + = nariz pra cima
-	var virar := -Input.get_axis("esquerda", "direita")             # + = pra esquerda
-	var rolar := Input.get_axis("rolar_esquerda", "rolar_direita")  # + = pra direita
-	if Input.is_action_pressed("freio_mao"):
+	var inclinar := -comandos.inclinar   # + = nariz pra cima
+	var virar := -comandos.direcao       # + = pra esquerda
+	var rolar := comandos.rolar          # + = pra direita
+	if comandos.freio_mao:
 		# segurando Shift/X, o virar vira rolar
 		rolar = clampf(rolar - virar, -1.0, 1.0)
 		virar = 0.0
@@ -229,7 +246,7 @@ func controlar_no_ar(estado: PhysicsDirectBodyState3D, dt: float) -> void:
 	var a_virar := GIRO_NO_AR.y * virar * controle_no_ar - AMORTECE_NO_AR.y * (1.0 - absf(virar)) * w.dot(cima)
 	var a_rolar := GIRO_NO_AR.z * rolar * controle_no_ar - AMORTECE_NO_AR.z * w.dot(frente)
 	estado.angular_velocity = w + (direita * a_inclinar + cima * a_virar + frente * a_rolar) * dt
-	estado.linear_velocity += frente * Input.get_axis("re", "acelerar") * ACELERACAO_NO_AR * dt
+	estado.linear_velocity += frente * comandos.acelerador * ACELERACAO_NO_AR * dt
 
 
 func apertou_pulo(estado: PhysicsDirectBodyState3D, no_chao: bool) -> void:
@@ -250,7 +267,7 @@ func apertou_pulo(estado: PhysicsDirectBodyState3D, no_chao: bool) -> void:
 		return
 	pulo_extra_usado = true
 	pulando = false
-	var direcao := Vector2(Input.get_axis("nariz_cima", "nariz_baixo"), Input.get_axis("esquerda", "direita"))
+	var direcao := Vector2(comandos.inclinar, comandos.direcao)
 	if direcao.length() >= 0.5:
 		comecar_mortal(estado, direcao)
 	else:
@@ -263,7 +280,7 @@ func segurar_pulo(estado: PhysicsDirectBodyState3D, dt: float) -> void:
 			tempo_no_ar_pos_pulo += dt
 		return
 	tempo_pulo += dt
-	if tempo_pulo < PULO_MINIMO or (tempo_pulo < tempo_segurando and Input.is_action_pressed("pulo")):
+	if tempo_pulo < PULO_MINIMO or (tempo_pulo < tempo_segurando and comandos.pulo):
 		estado.linear_velocity += estado.transform.basis.y * forca_segurando * dt
 	else:
 		pulando = false
@@ -338,13 +355,43 @@ func desvirar_pulando(estado: PhysicsDirectBodyState3D) -> void:
 	estado.linear_velocity += Vector3.UP * 2.0
 
 
+func velocidade() -> Vector3:
+	return linear_velocity if simulando else velocidade_rede
+
+
+func definir_simulacao(ligada: bool) -> void:
+	simulando = ligada
+	freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
+	freeze = not ligada
+
+
+func definir_time(time: String) -> void:
+	var cor := StandardMaterial3D.new()
+	cor.albedo_color = Color(0.2, 0.45, 0.95) if time == "azul" else Color(1.0, 0.5, 0.12)
+	$Corpo.material_override = cor
+
+
+func estimar_rodas() -> void:
+	# carro que só aparece (posição vinda do host): as rodas acompanham o chão só no desenho
+	var espaco := get_world_3d().direct_space_state
+	var cima := global_basis.y
+	var alcance := curso_mola + raio_roda
+	rodas_no_chao = 0
+	for i in 4:
+		var origem := global_transform * rodas[i].position
+		var toque := espaco.intersect_ray(PhysicsRayQueryParameters3D.create(origem, origem - cima * alcance, collision_mask, [get_rid()]))
+		compressao[i] = 0.0 if toque.is_empty() else alcance - origem.distance_to(toque.position)
+		if not toque.is_empty():
+			rodas_no_chao += 1
+
+
 func colocar_em(onde: Transform3D) -> void:
 	ponto_inicial = onde
 	pedido_voltar = true
 
 
 func atualizar_boost(dt: float) -> void:
-	var apertado := Input.is_action_pressed("boost") and boost > 0.0
+	var apertado := comandos.boost and boost > 0.0
 	if apertado:
 		tempo_boost_minimo = BOOST_MINIMO
 	boostando = (apertado or tempo_boost_minimo > 0.0) and boost > 0.0
@@ -414,9 +461,9 @@ func criar_rastro() -> void:
 
 
 func atualizar_rodas_desenhadas(delta: float) -> void:
-	var v_frente := linear_velocity.dot(-global_basis.z)
+	var v_frente := velocidade().dot(-global_basis.z)
 	giro_pneu -= v_frente / raio_roda * delta
-	var angulo := -Input.get_axis("esquerda", "direita") * angulo_visual_roda
+	var angulo := -comandos.direcao * angulo_visual_roda
 	for i in 4:
 		var pneu: Node3D = rodas[i].get_node("Pneu")
 		var distancia := maxf(curso_mola - compressao[i], 0.0)
