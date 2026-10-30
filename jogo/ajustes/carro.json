@@ -22,5 +22,8 @@
 	},
 	"mundo": {
 		"gravidade": 6.5
+	},
+	"bola": {
+		"forca_batida": 0.8
 	}
 }

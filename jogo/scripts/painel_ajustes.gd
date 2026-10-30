@@ -44,6 +44,7 @@ const AJUSTES := [
 	["carro", "gasto_boost", "Gasto do boost (por s)", 5.0, 100.0, 0.5],
 	["carro", "recarga_boost", "Recarga do boost (por s)", 0.0, 100.0, 1.0],
 	["titulo", "Bola"],
+	["bola", "forca_batida", "Força da batida", 0.2, 2.0, 0.05],
 	["bola", "empurrao_extra", "Empurrão extra do toque", 0.0, 3.0, 0.05],
 	["bola", "physics_material_override:bounce", "Quique da bola", 0.0, 1.0, 0.01],
 	["bola", "physics_material_override:friction", "Atrito da bola", 0.0, 2.0, 0.01],

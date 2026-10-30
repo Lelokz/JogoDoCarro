@@ -8,6 +8,14 @@ Diário do projeto. O mais novo fica em cima.
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
+## 30/10/2026: bola 20% mais fraca
+- Tu achou a bola rápida demais: num campo do tamanho do RL ela chegaria do outro lado antes do carro.
+  Pediu uns 20% a menos.
+- Medido: baixar só o "empurrão extra" quase não muda (pela metade = só 10% mais lenta); quem manda é a
+  batida física. Criei a **"Força da batida"** (F1 → Bola), que multiplica tudo que a bola ganha na batida
+  (não mexe quando o carro vai empurrando a bola colada).
+- Teu ajuste: **80%**. Andando 76 → 61 km/h · boost 123 → 99 km/h · mortal 115 → 92 km/h.
+
 ## 30/10/2026: Etapa 4, a bola
 Números conferidos no código do RocketSim.
 - **Bola:** 1,82 m de diâmetro, peso 30 (carro 180), quica 60%, máximo 60 m/s, gira no máximo 6 rad/s.
@@ -96,6 +104,7 @@ Fica salvo em `jogo/ajustes/carro.json` (o jogo abre com ele).
 - Câmera: distância 2,8 → 2,5, altura 1,1 → 1,3, FOV 90 → 100 (com a distância fixa, o 100 ficou bom)
 - Curva 1,0 → 1,15, aderência 60 → 54, giro no freio de mão 1,4 → 1,3
 - Freio 6 e desacelera solto 0 foram sem querer: voltei pra 35 e 5,25
-- Velocidade máxima 23 → 40 (por enquanto não muda nada: sem boost o motor vai só até 14,1)
+- Velocidade máxima 23 → 40: voltei pra 23 na etapa 3 (sem querer também)
+- Força da batida da bola: 80% (a bola ficava rápida demais pro tamanho do campo)
 
 **Próximo passo:** tu testar a bola → Etapa 5 (a arena: paredes curvas, gols, placar).

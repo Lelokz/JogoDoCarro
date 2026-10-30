@@ -6,6 +6,7 @@ extends RigidBody3D
 
 @export var carro_caminho: NodePath
 @export var empurrao_extra := 1.0        # multiplica o empurrão extra (1 = referência)
+@export var forca_batida := 1.0          # multiplica tudo que a bola ganha numa batida (física + empurrão)
 @export var velocidade_maxima := 60.0    # m/s
 
 const GIRO_MAXIMO := 6.0                 # rad/s
@@ -21,6 +22,8 @@ var ultimo_empurrao := -10
 var pedido_voltar := false
 var pedido_trazer := false
 var ultimo_toque := 0.0   # velocidade que a bola saiu do último toque (pro HUD e pros testes)
+var velocidade_anterior := Vector3.ZERO
+var tocando_carro := false
 
 
 func _ready() -> void:
@@ -44,15 +47,24 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 
 	# um empurrão extra no máximo a cada 2 quadros, igual à referência
 	var quadro := Engine.get_physics_frames()
+	var toque := false
 	for i in estado.get_contact_count():
 		var outro := estado.get_contact_collider_object(i)
-		if outro is Node and outro.is_in_group("carros") and quadro > ultimo_empurrao + 1:
-			empurrar(estado, outro)
-			ultimo_empurrao = quadro
+		if outro is Node and outro.is_in_group("carros"):
+			toque = true
+			if quadro > ultimo_empurrao + 1:
+				empurrar(estado, outro)
+				ultimo_empurrao = quadro
 			break
+	# só na batida (não enquanto o carro vai empurrando a bola colada)
+	if toque and not tocando_carro:
+		estado.linear_velocity = velocidade_anterior + (estado.linear_velocity - velocidade_anterior) * forca_batida
+		ultimo_toque = estado.linear_velocity.length()
+	tocando_carro = toque
 
 	estado.linear_velocity = estado.linear_velocity.limit_length(velocidade_maxima)
 	estado.angular_velocity = estado.angular_velocity.limit_length(GIRO_MAXIMO)
+	velocidade_anterior = estado.linear_velocity
 
 
 func empurrar(estado: PhysicsDirectBodyState3D, quem: RigidBody3D) -> void:
@@ -77,6 +89,7 @@ func reposicionar(estado: PhysicsDirectBodyState3D) -> void:
 		estado.transform = ponto_inicial
 	estado.linear_velocity = Vector3.ZERO
 	estado.angular_velocity = Vector3.ZERO
+	velocidade_anterior = Vector3.ZERO
 	pedido_voltar = false
 	pedido_trazer = false
 
