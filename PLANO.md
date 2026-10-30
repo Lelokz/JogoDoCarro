@@ -73,6 +73,9 @@ Esses são só o **ponto de partida**. O balanceamento final é o que ficar bom 
 ### Etapa 6 — Multiplayer (host)
 - Menu: "Hospedar" ou "Entrar" (digitar o endereço do host).
 - O host roda a física de verdade; os outros mandam os comandos e recebem a posição de tudo.
+- **Os ajustes do carro são do host.** Os carros de todo mundo usam os valores do host, que manda
+  eles pros outros quando entram. O painel F1 só abre pra quem é host; pros amigos ele nem aparece.
+  Como a física roda no host, mesmo que alguém mexesse no arquivo do próprio PC, não ia mudar nada.
 - 1v1, 2v2, 3v3.
 - Pra jogar pela internet: o jeito mais fácil é uma rede virtual (tipo Tailscale/ZeroTier) ou
   abrir uma porta no roteador do host. A gente decide quando chegar aqui.
