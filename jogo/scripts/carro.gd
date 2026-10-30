@@ -1,6 +1,6 @@
 extends RigidBody3D
 
-# Valores de partida: números da wiki RLBot convertidos de cm pra metros.
+# Valores de partida: números do RocketSim/RLBot convertidos de cm pra metros.
 # São pra ajustar jogando no painel F1.
 
 @export_group("Suspensão")
@@ -24,25 +24,65 @@ extends RigidBody3D
 @export var endireitar := 2.0             # quanto o carro gira sozinho pra apontar pra onde está indo
 @export var angulo_visual_roda := 0.45    # rad, só a roda desenhada
 
+@export_group("Pulo")
+@export var forca_pulo := 2.92            # m/s na hora que aperta
+@export var forca_segurando := 14.58      # m/s² enquanto segura o botão
+@export var tempo_segurando := 0.2        # s que segurar ainda ajuda
+@export var janela_pulo_extra := 1.25     # s depois do pulo pra usar o duplo pulo ou o mortal
+@export var forca_mortal := 5.0           # m/s do empurrão do mortal
+@export var duracao_mortal := 0.65        # s pra dar a volta inteira no mortal
+
+@export_group("Ar e boost")
+@export var controle_no_ar := 1.0         # multiplica a força de girar no ar
+@export var aceleracao_boost := 9.92      # m/s² no chão (no ar é 6,7% a mais)
+@export var gasto_boost := 33.3           # por segundo (tanque de 100 dura 3 s)
+@export var recarga_boost := 0.0          # por segundo; o campo de teste liga isso
+
 # [velocidade m/s, aceleração m/s²]: acelera forte parado e quase nada perto de 14,1
 const ACELERACAO := [[0.0, 16.0], [14.0, 1.6], [14.1, 0.0]]
 const ENTRADA_DERRAPAGEM := 0.1   # s pro pneu soltar quando aperta o freio de mão
 # [velocidade m/s, curvatura 1/m]: quanto mais rápido, mais aberta a curva
 const CURVATURA := [[0.0, 0.69], [5.0, 0.398], [10.0, 0.235], [15.0, 0.1375], [17.5, 0.11], [25.0, 0.088]]
+const PULO_MINIMO := 0.025                          # s: até um toque rápido pula um pouco
+const GIRO_NO_AR := Vector3(12.46, 9.11, 38.34)     # rad/s²: inclinar, virar, rolar
+const AMORTECE_NO_AR := Vector3(2.88, 1.92, 4.79)   # para de girar sozinho quando solta
+const GIRO_MAXIMO := 5.5                            # rad/s
+const ACELERACAO_NO_AR := 0.667                     # m/s² acelerando no ar
+const BOOST_MINIMO := 0.1                           # s: um toque no boost dura pelo menos isso
+const SUPERSONICO := 22.0                           # m/s
+const VELOCIDADE_REFERENCIA := 23.0                 # m/s: base do empurrão do mortal
 
 @onready var rodas: Array[Node3D] = [$RodaFE, $RodaFD, $RodaTE, $RodaTD]
 
 var compressao := [0.0, 0.0, 0.0, 0.0]
 var rodas_no_chao := 0
+var normal_chao := Vector3.UP
 var derrapagem := 0.0   # 0 = pneu agarrando, 1 = freio de mão inteiro
 var giro_pneu := 0.0
 var ponto_inicial: Transform3D
 var pedido_desvirar := false
 var pedido_voltar := false
+var pedido_pulo := false
+
+var boost := 100.0
+var boostando := false
+var tempo_boost_minimo := 0.0
+var supersonico := false
+var pulando := false
+var tempo_pulo := 0.0
+var pulou := false
+var pulo_extra_usado := false
+var tempo_no_ar_pos_pulo := 0.0
+var tempo_mortal := -1.0   # -1 = não está no mortal
+var direcao_mortal := Vector2.ZERO
+var tempo_desvirando := 0.0
+var eixo_desvirar := Vector3.ZERO
+var rastro: CPUParticles3D
 
 
 func _ready() -> void:
 	ponto_inicial = global_transform
+	criar_rastro()
 
 
 func _physics_process(delta: float) -> void:
@@ -50,6 +90,9 @@ func _physics_process(delta: float) -> void:
 		pedido_desvirar = true
 	if Input.is_action_just_pressed("voltar_inicio"):
 		pedido_voltar = true
+	if Input.is_action_just_pressed("pulo"):
+		pedido_pulo = true
+	rastro.emitting = boostando
 	atualizar_rodas_desenhadas(delta)
 
 
@@ -59,11 +102,45 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 		return
 
 	var dt := estado.step
-	var base := estado.transform.basis
-	var cima := base.y
+	ler_suspensao(estado, dt)
+	var no_chao := rodas_no_chao >= 3
+	if no_chao and not pulando and (not pulou or tempo_no_ar_pos_pulo > 0.0):
+		pulou = false
+		pulo_extra_usado = false
+		tempo_mortal = -1.0
+	atualizar_boost(dt)
+
+	if pedido_pulo:
+		pedido_pulo = false
+		apertou_pulo(estado, no_chao)
+	segurar_pulo(estado, dt)
+
+	if rodas_no_chao > 0:
+		dirigir(estado, dt)
+	elif tempo_mortal >= 0.0:
+		girar_mortal(estado, dt)
+	else:
+		controlar_no_ar(estado, dt)
+
+	if tempo_desvirando > 0.0:
+		estado.angular_velocity = eixo_desvirar * GIRO_MAXIMO
+		tempo_desvirando -= dt
+	if boostando:
+		var no_ar := 1.0 if rodas_no_chao > 0 else 1.067
+		estado.linear_velocity += -estado.transform.basis.z * aceleracao_boost * no_ar * dt
+
+	var velocidade := estado.linear_velocity.length()
+	supersonico = velocidade >= SUPERSONICO or (supersonico and velocidade >= SUPERSONICO - 1.0)
+	estado.linear_velocity = estado.linear_velocity.limit_length(velocidade_maxima)
+	if not girando_mortal():
+		estado.angular_velocity = estado.angular_velocity.limit_length(GIRO_MAXIMO)
+
+
+func ler_suspensao(estado: PhysicsDirectBodyState3D, dt: float) -> void:
+	var cima := estado.transform.basis.y
 	var espaco := estado.get_space_state()
 	var alcance := curso_mola + raio_roda
-	var normal_chao := Vector3.ZERO
+	var soma_normais := Vector3.ZERO
 	rodas_no_chao = 0
 
 	for i in 4:
@@ -75,7 +152,7 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 			compressao[i] = 0.0
 			continue
 		rodas_no_chao += 1
-		normal_chao += toque.normal
+		soma_normais += toque.normal
 		compressao[i] = alcance - origem.distance_to(toque.position)
 		var velocidade_compressao: float = (compressao[i] - anterior) / dt
 		var forca := maxf(mola * compressao[i] + amortecedor * velocidade_compressao, 0.0)
@@ -83,44 +160,188 @@ func _integrate_forces(estado: PhysicsDirectBodyState3D) -> void:
 			forca += batente * (compressao[i] - curso_mola)
 		estado.apply_force(cima * forca, origem - estado.transform.origin)
 
-	var v := estado.linear_velocity
 	if rodas_no_chao > 0:
-		normal_chao = normal_chao.normalized()
-		var frente := (-base.z).slide(normal_chao).normalized()
-		var lado := base.x.slide(normal_chao).normalized()
-		var v_frente := v.dot(frente)
-		var v_lado := v.dot(lado)
-		var contato := rodas_no_chao / 4.0
-		var acelerador := Input.get_axis("re", "acelerar")
-		var direcao := Input.get_axis("esquerda", "direita")
-		var freio_mao := Input.is_action_pressed("freio_mao")
+		normal_chao = soma_normais.normalized()
 
-		var dv := 0.0
-		if acelerador != 0.0 and absf(v_frente) > 0.1 and signf(acelerador) != signf(v_frente):
-			dv = -signf(v_frente) * minf(freio * dt, absf(v_frente))
-		elif acelerador != 0.0:
-			dv = acelerador * curva(ACELERACAO, absf(v_frente)) * forca_motor * dt
-		else:
-			dv = -signf(v_frente) * minf(desaceleracao_solto * dt, absf(v_frente))
-		v += frente * dv * contato
 
-		if freio_mao:
-			derrapagem = minf(derrapagem + dt / ENTRADA_DERRAPAGEM, 1.0)
-		else:
-			derrapagem = maxf(derrapagem - dt / volta_aderencia, 0.0)
-		var limite_lado := lerpf(aderencia, aderencia_freio_mao, derrapagem) * dt * contato
-		v -= lado * clampf(v_lado, -limite_lado, limite_lado)
+func dirigir(estado: PhysicsDirectBodyState3D, dt: float) -> void:
+	var base := estado.transform.basis
+	var cima := base.y
+	var v := estado.linear_velocity
+	var frente := (-base.z).slide(normal_chao).normalized()
+	var lado := base.x.slide(normal_chao).normalized()
+	var v_frente := v.dot(frente)
+	var v_lado := v.dot(lado)
+	var contato := rodas_no_chao / 4.0
+	var acelerador := 1.0 if boostando else Input.get_axis("re", "acelerar")
+	var direcao := Input.get_axis("esquerda", "direita")
+	var freio_mao := Input.is_action_pressed("freio_mao")
+
+	var dv := 0.0
+	if acelerador != 0.0 and absf(v_frente) > 0.1 and signf(acelerador) != signf(v_frente):
+		dv = -signf(v_frente) * minf(freio * dt, absf(v_frente))
+	elif acelerador != 0.0:
+		dv = acelerador * curva(ACELERACAO, absf(v_frente)) * forca_motor * dt
+	else:
+		dv = -signf(v_frente) * minf(desaceleracao_solto * dt, absf(v_frente))
+	v += frente * dv * contato
+
+	if freio_mao:
+		derrapagem = minf(derrapagem + dt / ENTRADA_DERRAPAGEM, 1.0)
+	else:
+		derrapagem = maxf(derrapagem - dt / volta_aderencia, 0.0)
+	var limite_lado := lerpf(aderencia, aderencia_freio_mao, derrapagem) * dt * contato
+	v -= lado * clampf(v_lado, -limite_lado, limite_lado)
+	if not pulando:
 		v -= normal_chao * grude * dt * contato
 
-		var giro := -direcao * curva(CURVATURA, absf(v_frente)) * multiplicador_curva * v_frente
-		giro *= lerpf(1.0, giro_freio_mao, derrapagem)
-		var angulo_deslize := frente.signed_angle_to(v.slide(normal_chao), normal_chao)
-		if v.length() > 2.0 and absf(angulo_deslize) < deg_to_rad(100.0):
-			giro += angulo_deslize * endireitar * (1.0 - derrapagem)
-		var w := estado.angular_velocity
-		estado.angular_velocity = w + cima * (giro - w.dot(cima)) * contato
+	var giro := -direcao * curva(CURVATURA, absf(v_frente)) * multiplicador_curva * v_frente
+	giro *= lerpf(1.0, giro_freio_mao, derrapagem)
+	var angulo_deslize := frente.signed_angle_to(v.slide(normal_chao), normal_chao)
+	if v.length() > 2.0 and absf(angulo_deslize) < deg_to_rad(100.0):
+		giro += angulo_deslize * endireitar * (1.0 - derrapagem)
+	var w := estado.angular_velocity
+	estado.angular_velocity = w + cima * (giro - w.dot(cima)) * contato
+	estado.linear_velocity = v
 
-	estado.linear_velocity = v.limit_length(velocidade_maxima)
+
+func controlar_no_ar(estado: PhysicsDirectBodyState3D, dt: float) -> void:
+	var base := estado.transform.basis
+	var direita := base.x
+	var cima := base.y
+	var frente := -base.z
+	var inclinar := -Input.get_axis("nariz_cima", "nariz_baixo")   # + = nariz pra cima
+	var virar := -Input.get_axis("esquerda", "direita")             # + = pra esquerda
+	var rolar := Input.get_axis("rolar_esquerda", "rolar_direita")  # + = pra direita
+	if Input.is_action_pressed("freio_mao"):
+		# segurando Shift/X, o virar vira rolar
+		rolar = clampf(rolar - virar, -1.0, 1.0)
+		virar = 0.0
+
+	var w := estado.angular_velocity
+	var a_inclinar := GIRO_NO_AR.x * inclinar * controle_no_ar - AMORTECE_NO_AR.x * (1.0 - absf(inclinar)) * w.dot(direita)
+	var a_virar := GIRO_NO_AR.y * virar * controle_no_ar - AMORTECE_NO_AR.y * (1.0 - absf(virar)) * w.dot(cima)
+	var a_rolar := GIRO_NO_AR.z * rolar * controle_no_ar - AMORTECE_NO_AR.z * w.dot(frente)
+	estado.angular_velocity = w + (direita * a_inclinar + cima * a_virar + frente * a_rolar) * dt
+	estado.linear_velocity += frente * Input.get_axis("re", "acelerar") * ACELERACAO_NO_AR * dt
+
+
+func apertou_pulo(estado: PhysicsDirectBodyState3D, no_chao: bool) -> void:
+	var base := estado.transform.basis
+	if no_chao and not pulando:
+		estado.linear_velocity += base.y * forca_pulo
+		pulando = true
+		tempo_pulo = 0.0
+		pulou = true
+		tempo_no_ar_pos_pulo = 0.0
+		return
+	if rodas_no_chao > 0:
+		return
+	if encostado_virado(estado):
+		desvirar_pulando(estado)
+		return
+	if pulo_extra_usado or (pulou and tempo_no_ar_pos_pulo > janela_pulo_extra):
+		return
+	pulo_extra_usado = true
+	pulando = false
+	var direcao := Vector2(Input.get_axis("nariz_cima", "nariz_baixo"), Input.get_axis("esquerda", "direita"))
+	if direcao.length() >= 0.5:
+		comecar_mortal(estado, direcao)
+	else:
+		estado.linear_velocity += base.y * forca_pulo
+
+
+func segurar_pulo(estado: PhysicsDirectBodyState3D, dt: float) -> void:
+	if not pulando:
+		if pulou and rodas_no_chao == 0:
+			tempo_no_ar_pos_pulo += dt
+		return
+	tempo_pulo += dt
+	if tempo_pulo < PULO_MINIMO or (tempo_pulo < tempo_segurando and Input.is_action_pressed("pulo")):
+		estado.linear_velocity += estado.transform.basis.y * forca_segurando * dt
+	else:
+		pulando = false
+
+
+func comecar_mortal(estado: PhysicsDirectBodyState3D, direcao: Vector2) -> void:
+	# direcao.x: + = pra frente, - = pra trás; direcao.y: + = pra direita
+	if absf(direcao.x) < 0.1:
+		direcao.x = 0.0
+	if absf(direcao.y) < 0.1:
+		direcao.y = 0.0
+	direcao = direcao.normalized()
+	direcao_mortal = direcao
+	tempo_mortal = 0.0
+
+	var base := estado.transform.basis
+	var frente := Vector3(-base.z.x, 0.0, -base.z.z)
+	if frente.length() < 0.01:
+		frente = Vector3(base.y.x, 0.0, base.y.z)
+	frente = frente.normalized()
+	var direita := frente.cross(Vector3.UP)
+	var v := estado.linear_velocity
+	var v_frente := v.dot(frente)
+	var razao := absf(v_frente) / VELOCIDADE_REFERENCIA
+	var para_tras := direcao.x < 0.0 if absf(v_frente) < 1.0 else (direcao.x >= 0.0) != (v_frente > 0.0)
+	var impulso := direcao * forca_mortal
+	impulso.x *= ((2.5 if para_tras else 1.0) - 1.0) * razao + 1.0
+	impulso.y *= 0.9 * razao + 1.0
+	if para_tras:
+		impulso.x *= 16.0 / 15.0
+	estado.linear_velocity = v + frente * impulso.x + direita * impulso.y
+
+
+func girar_mortal(estado: PhysicsDirectBodyState3D, dt: float) -> void:
+	# o mortal dá exatamente uma volta em duracao_mortal e para: cai de rodas pra baixo
+	tempo_mortal += dt
+	var base := estado.transform.basis
+	var eixo := (base.x * -direcao_mortal.x + -base.z * direcao_mortal.y).normalized()
+	var w := estado.angular_velocity
+	if girando_mortal():
+		estado.angular_velocity = w + eixo * (TAU / duracao_mortal - w.dot(eixo))
+	elif tempo_mortal - dt < duracao_mortal:
+		estado.angular_velocity = w - eixo * w.dot(eixo)
+	else:
+		controlar_no_ar(estado, dt)
+	# durante o giro o carro quase não cai: dá tempo de completar a volta
+	var v := estado.linear_velocity
+	if tempo_mortal >= 0.15 and tempo_mortal < duracao_mortal and (v.y < 0.0 or tempo_mortal < 0.21):
+		v.y *= pow(0.65, 120.0 * dt)
+		estado.linear_velocity = v
+
+
+func girando_mortal() -> bool:
+	return tempo_mortal >= 0.0 and tempo_mortal < duracao_mortal
+
+
+func encostado_virado(estado: PhysicsDirectBodyState3D) -> bool:
+	if estado.transform.basis.y.dot(Vector3.UP) > 0.7:
+		return false
+	var origem := estado.transform.origin
+	var consulta := PhysicsRayQueryParameters3D.create(origem, origem + Vector3.DOWN * 0.6, collision_mask, [get_rid()])
+	return not estado.get_space_state().intersect_ray(consulta).is_empty()
+
+
+func desvirar_pulando(estado: PhysicsDirectBodyState3D) -> void:
+	var cima := estado.transform.basis.y
+	var eixo := cima.cross(Vector3.UP)
+	if eixo.length() < 0.1:
+		eixo = -estado.transform.basis.z
+	eixo_desvirar = eixo.normalized()
+	tempo_desvirando = cima.angle_to(Vector3.UP) / GIRO_MAXIMO
+	estado.linear_velocity += Vector3.UP * 2.0
+
+
+func atualizar_boost(dt: float) -> void:
+	var apertado := Input.is_action_pressed("boost") and boost > 0.0
+	if apertado:
+		tempo_boost_minimo = BOOST_MINIMO
+	boostando = (apertado or tempo_boost_minimo > 0.0) and boost > 0.0
+	tempo_boost_minimo = maxf(tempo_boost_minimo - dt, 0.0)
+	if boostando:
+		boost = maxf(boost - gasto_boost * dt, 0.0)
+	else:
+		boost = minf(boost + recarga_boost * dt, 100.0)
 
 
 func reposicionar(estado: PhysicsDirectBodyState3D) -> void:
@@ -135,6 +356,8 @@ func reposicionar(estado: PhysicsDirectBodyState3D) -> void:
 		estado.transform = Transform3D(Basis.looking_at(frente), posicao)
 	estado.linear_velocity = Vector3.ZERO
 	estado.angular_velocity = Vector3.ZERO
+	tempo_mortal = -1.0
+	tempo_desvirando = 0.0
 	pedido_voltar = false
 	pedido_desvirar = false
 
@@ -146,6 +369,37 @@ func curva(tabela: Array, x: float) -> float:
 			var b: Array = tabela[i]
 			return lerpf(a[1], b[1], (x - a[0]) / (b[0] - a[0]))
 	return tabela[-1][1]
+
+
+func criar_rastro() -> void:
+	rastro = CPUParticles3D.new()
+	rastro.position = Vector3(0.0, 0.0, 0.62)
+	rastro.amount = 80
+	rastro.lifetime = 0.35
+	rastro.emitting = false
+	rastro.local_coords = false
+	rastro.direction = Vector3.BACK
+	rastro.spread = 8.0
+	rastro.initial_velocity_min = 3.0
+	rastro.initial_velocity_max = 5.0
+	rastro.gravity = Vector3.ZERO
+	rastro.scale_amount_min = 0.6
+	var bolinha := SphereMesh.new()
+	bolinha.radius = 0.09
+	bolinha.height = 0.18
+	bolinha.radial_segments = 8
+	bolinha.rings = 4
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.vertex_color_use_as_albedo = true
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bolinha.material = material
+	rastro.mesh = bolinha
+	var cores := Gradient.new()
+	cores.set_color(0, Color(1.0, 0.8, 0.3, 1.0))
+	cores.set_color(1, Color(1.0, 0.2, 0.05, 0.0))
+	rastro.color_ramp = cores
+	add_child(rastro)
 
 
 func atualizar_rodas_desenhadas(delta: float) -> void:

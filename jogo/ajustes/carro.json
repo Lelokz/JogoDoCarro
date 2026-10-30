@@ -18,7 +18,7 @@
 		"grude": 3.25,
 		"mola": 8000.0,
 		"multiplicador_curva": 1.15,
-		"velocidade_maxima": 40.0
+		"velocidade_maxima": 23.0
 	},
 	"mundo": {
 		"gravidade": 6.5

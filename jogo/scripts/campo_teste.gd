@@ -21,6 +21,8 @@ var material_grade := ShaderMaterial.new()
 
 func _ready() -> void:
 	material_grade.shader = preload("res://shaders/grade.gdshader")
+	# ainda não tem os pads de boost (etapa 5): aqui o tanque enche sozinho
+	$Carro.recarga_boost = 20.0
 	criar_bloco(Vector3(0, -0.5, 0), Vector3(TAMANHO_CHAO, 1, TAMANHO_CHAO), Basis())
 	for r in RAMPAS:
 		var tamanho: Vector3 = r[1]

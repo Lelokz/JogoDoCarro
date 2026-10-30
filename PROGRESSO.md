@@ -8,6 +8,25 @@ Diário do projeto. O mais novo fica em cima.
 - `./testar.sh`: teste sem tela (o carro dirige sozinho e mostra os números)
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 
+## 30/10/2026: Etapa 3, pulo, mortal, controle no ar e boost
+Números de partida conferidos no código do RocketSim (simulação aberta da física, feita pela comunidade).
+- **Pulo:** toque rápido sobe 0,76 m, segurando sobe 2,2 m, duplo pulo 4,2 m.
+  Pra usar o 2º pulo tem 1,25 s depois do pulo; caindo de rampa sem pular, o 2º pulo fica guardado.
+- **Mortal** (2º pulo com direção): pra frente +4,8 m/s, pro lado +2 m/s, pra trás freia (13,7 → 4 m/s).
+  - Seguindo a referência à risca, o giro fica preso em 5,5 rad/s e uma volta leva 1,14 s:
+    o mortal de lado e o de trás batiam no chão no meio e o carro caía de teto.
+  - **Do nosso jeito:** o mortal dá exatamente uma volta em 0,65 s, o carro quase não cai enquanto gira,
+    e no fim o giro para. Os três terminam de rodas pra baixo. Ajustável no F1 ("Giro do mortal").
+- **Controle no ar:** W/S inclina, A/D vira, Q/E rola (ou Shift + A/D). Chega no giro máximo em 0,44 s
+  e para de girar sozinho quando solta.
+- **Pulo pra desvirar:** de teto ou de lado no chão, o pulo desvira o carro.
+- **Boost:** tanque de 100, dura 3 s, rastro laranja. Parado → supersônico (22 m/s) em 1,8 s; máximo 23 m/s.
+  No campo de teste o tanque enche sozinho (20/s), porque os pads de boost só vêm na etapa 5.
+  - A velocidade máxima que tinha ficado em 40 (sem querer) voltou pra 23.
+- Câmera no ar segue pra onde o carro vai (senão girava junto no mortal).
+- Botões: Espaço / botão direito / A = pulo · botão esquerdo / Ctrl / B = boost · Q/E ou LB/RB = rolar.
+- `./testar.sh` agora roda os dois testes (chão e ar).
+
 ## 30/10/2026: drift com transição
 - Tu sentiu: soltando o Shift, o drift parava na hora e o carro voltava ao normal de uma vez.
   Medido: o carro ia de 80° de lado pra 0° em 0,2 s, e a velocidade caía de 9,5 pra 3,2 m/s (o tranco).
@@ -60,4 +79,4 @@ Fica salvo em `jogo/ajustes/carro.json` (o jogo abre com ele).
 - Freio 6 e desacelera solto 0 foram sem querer: voltei pra 35 e 5,25
 - Velocidade máxima 23 → 40 (por enquanto não muda nada: sem boost o motor vai só até 14,1)
 
-**Próximo passo:** tu brincar no painel F1 e salvar o que ficar bom → Etapa 3 (pulo, ar, boost).
+**Próximo passo:** tu testar o pulo, o mortal e o boost → Etapa 4 (a bola).
