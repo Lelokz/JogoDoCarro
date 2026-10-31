@@ -17,9 +17,8 @@ const LARANJA := Color(1.0, 0.5, 0.12)
 const ONDE_CARRO := Vector3(0.0, 0.0, 3.0)
 const CAMERA := Vector3(1.0, 0.85, 6.1)
 const OLHAR := Vector3(-1.05, 0.42, 2.7)
-# Personalizar: o carro sobe num pódio e a câmera vem pra frente dele, no meio da tela
-const CAMERA_PODIO := Vector3(0.0, 1.25, 6.4)
-const OLHAR_PODIO := Vector3(0.0, 0.42, 3.0)
+# Personalizar: o carro sobe num pódio, para de girar de frente pra câmera e a câmera passa a
+# rodar em volta dele (cada aba manda ela pra um lado; arrastando o mouse gira, a rodinha aproxima)
 const ALTURA_PODIO := 0.2
 
 var endereco := LineEdit.new()
@@ -47,6 +46,8 @@ var podio := MeshInstance3D.new()
 var bola: Node3D
 var no_podio := 0.0                # 0 = menu, 1 = personalizar (anda aos poucos entre os dois)
 var tela_personalizar: TelaPersonalizar
+var orbita := Vector4(0.65, 0.22, 3.3, 0.0)        # câmera do Personalizar: giro, altura (rad), distância, alvo
+var orbita_alvo := Vector4(0.65, 0.22, 3.3, 0.0)
 
 
 func _ready() -> void:
@@ -264,6 +265,7 @@ func abrir_personalizar() -> void:
 	aviso.text = ""
 	tela_personalizar = TelaPersonalizar.new()
 	tela_personalizar.carro = carro
+	tela_personalizar.menu = self
 	tela_personalizar.fechou.connect(func() -> void:
 		tela_personalizar = null
 		lado.visible = true
@@ -275,6 +277,7 @@ func abrir_personalizar() -> void:
 func _process(delta: float) -> void:
 	tempo += delta
 	no_podio = move_toward(no_podio, 1.0 if tela_personalizar else 0.0, delta * 1.8)
+	orbita = orbita.lerp(orbita_alvo, minf(delta * 5.0, 1.0))
 	if aparecendo >= 0.0 and aparecendo < 1.0:
 		aparecendo = minf(aparecendo + delta * 1.5, 1.0)
 		fundo.modulate.a = 1.0 - aparecendo
@@ -358,7 +361,9 @@ func girar_carro() -> void:
 	if carro == null or not is_instance_valid(carro) or carro.process_mode != Node.PROCESS_MODE_DISABLED:
 		return
 	var p := smoothstep(0.0, 1.0, no_podio)
-	carro.global_transform = Transform3D(Basis(Vector3.UP, tempo * 0.4 + 2.2), ONDE_CARRO + Vector3.UP * (altura_carro + ALTURA_PODIO * p))
+	# no Personalizar o carro para de frente pra câmera (é ela que roda em volta)
+	var giro := lerp_angle(tempo * 0.4 + 2.2, PI, p)
+	carro.global_transform = Transform3D(Basis(Vector3.UP, giro), ONDE_CARRO + Vector3.UP * (altura_carro + ALTURA_PODIO * p))
 	# o pódio sobe do chão; a bola sai da frente
 	podio.visible = p > 0.0
 	podio.position = ONDE_CARRO + Vector3.UP * (ALTURA_PODIO * p - ALTURA_PODIO)
@@ -369,8 +374,28 @@ func girar_carro() -> void:
 		carro.tinta.set_shader_parameter("cor", AZUL.lerp(LARANJA, mistura))
 	var camera: Camera3D = arena.get_node("Camera")
 	var balanco := Vector3(sin(tempo * 0.15) * 0.25, sin(tempo * 0.21) * 0.06, 0.0) * (1.0 - p)
-	camera.global_position = CAMERA.lerp(CAMERA_PODIO, p) + balanco
-	camera.look_at(OLHAR.lerp(OLHAR_PODIO, p))
+	var centro := ONDE_CARRO + Vector3.UP * (ALTURA_PODIO + altura_carro + orbita.w)
+	var em_volta := Vector3(sin(orbita.x) * cos(orbita.y), sin(orbita.y), cos(orbita.x) * cos(orbita.y)) * orbita.z
+	camera.global_position = CAMERA.lerp(centro + em_volta, p) + balanco
+	camera.look_at(OLHAR.lerp(centro, p))
+
+
+func mirar(giro: float, altura: float, distancia: float, alvo: float) -> void:
+	# cada aba do Personalizar leva a câmera pro lado certo (pelo caminho mais curto em volta)
+	var atual := orbita_alvo.x
+	giro = atual + wrapf(giro - atual, -PI, PI)
+	orbita_alvo = Vector4(giro, altura, distancia, alvo)
+
+
+func girar_camera(giro: float, altura: float) -> void:
+	orbita_alvo.x += giro
+	orbita_alvo.y = clampf(orbita_alvo.y + altura, 0.02, 1.2)
+	orbita.x = orbita_alvo.x
+	orbita.y = orbita_alvo.y
+
+
+func aproximar(quanto: float) -> void:
+	orbita_alvo.z = clampf(orbita_alvo.z * quanto, 1.5, 5.5)
 
 
 func assentar_rodas() -> void:

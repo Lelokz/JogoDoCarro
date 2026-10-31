@@ -100,7 +100,9 @@ var explodido := false   # demolido: some por uns segundos e volta perto do pró
 var tinta := ModeloCarro.pintura(Color(0.2, 0.45, 0.95))   # cada carro tem a sua (cor do time)
 var turbina := ModeloCarro.turbina()                      # e a sua turbina (acende no boost)
 var detalhe := Materiais.liso(Color(0.78, 0.8, 0.84), 0.22, Color.BLACK, 0.0, 0.9)   # rodas e enfeite
-var enfeite := MeshInstance3D.new()
+var teto := MeshInstance3D.new()        # enfeites do Personalizar (cada um no seu lugar, dá pra usar juntos)
+var antena := MeshInstance3D.new()
+var aerofolio := MeshInstance3D.new()
 var aparencia := Aparencia.PADRAO.duplicate()   # o que o dono escolheu no Personalizar
 
 
@@ -110,7 +112,8 @@ func _ready() -> void:
 	# cada carro com a sua caixa de batida (o modelo muda o tamanho dela)
 	$Forma.shape = BoxShape3D.new()
 	inertia = ModeloCarro.INERCIA
-	$Corpo.add_child(enfeite)
+	for enfeite in [teto, antena, aerofolio]:
+		$Corpo.add_child(enfeite)
 	criar_rastro()
 	vestir(aparencia)
 	# pra partida saber em quem o carro bateu (demolição)
@@ -448,14 +451,14 @@ func definir_time(time: String) -> void:
 
 
 func vestir(escolha: Dictionary) -> void:
-	# a cor principal continua a do time; aqui muda faixas, rodas, fogo, rastro e enfeite
-	aparencia = Aparencia.decodificar(Aparencia.codificar(escolha))
-	var cor_detalhe: Color = Aparencia.DETALHES[aparencia.detalhe][1]
+	# a cor principal continua a do time; aqui muda o modelo, detalhes, desenho, boost e enfeites
+	aparencia = Aparencia.limpa(escolha)
+	var cor_detalhe: Color = Aparencia.CORES[aparencia.detalhe][1]
 	detalhe.set_shader_parameter("cor", cor_detalhe)
-	tinta.set_shader_parameter("cor_faixas", Color(cor_detalhe, 1.0 if aparencia.detalhe > 0 else 0.0))
-	var fogo: Color = Aparencia.FOGOS[aparencia.fogo][1]
+	tinta.set_shader_parameter("cor_faixas", Color(cor_detalhe, 1.0 if aparencia.desenho == 1 else 0.0))
+	var fogo: Color = Aparencia.CORES_FOGO[aparencia.boost_cor][1]
 	turbina.set_shader_parameter("brilho", fogo)
-	montar_rastro(aparencia.rastro, fogo)
+	montar_rastro(aparencia.boost, fogo)
 	# modelo: desenho, rodas e (como no Rocket League) caixa de batida e lugar das rodas
 	var d := ModeloCarro.dados(aparencia.modelo)
 	$Forma.shape.size = d.caixa
@@ -467,11 +470,15 @@ func vestir(escolha: Dictionary) -> void:
 		pneu.mesh = ModeloCarro.roda(aparencia.modelo, i >= 2)
 		usar_materiais(pneu)
 	rastro.position = d.turbina
-	$Corpo.mesh = ModeloCarro.corpo(aparencia.modelo)
+	$Corpo.mesh = ModeloCarro.corpo(aparencia.modelo, aparencia.aerofolio > 0)
 	usar_materiais($Corpo)
-	enfeite.mesh = ModeloCarro.enfeite(aparencia.enfeite)
-	usar_materiais(enfeite)
-	enfeite.position = ModeloCarro.posicao_enfeite(aparencia.modelo, aparencia.enfeite)
+	teto.mesh = ModeloCarro.enfeite(2 if aparencia.teto > 0 else 0)
+	teto.position = ModeloCarro.posicao_enfeite(aparencia.modelo, 2)
+	antena.mesh = ModeloCarro.enfeite(1 if aparencia.antena > 0 else 0)
+	antena.position = ModeloCarro.posicao_enfeite(aparencia.modelo, 1)
+	aerofolio.mesh = ModeloCarro.enfeite(3 if aparencia.aerofolio > 0 else 0, aparencia.modelo)
+	for enfeite in [teto, antena, aerofolio]:
+		usar_materiais(enfeite)
 
 
 func usar_materiais(malha: MeshInstance3D) -> void:

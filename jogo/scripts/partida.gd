@@ -114,7 +114,7 @@ func _ready() -> void:
 		multiplayer.peer_connected.connect(jogador_entrou)
 		multiplayer.peer_disconnected.connect(jogador_saiu)
 		Rede.comandos_chegaram.connect(comandos_chegaram)
-		Rede.aparencia_chegou.connect(func(id: int, codigo: int) -> void:
+		Rede.aparencia_chegou.connect(func(id: int, codigo: PackedByteArray) -> void:
 			if carros.has(id):
 				carros[id].vestir(Aparencia.decodificar(codigo)))
 	saida_de_bola()
@@ -532,7 +532,7 @@ func aplicar_estado(a: Array, b: Array, t: float) -> void:
 			continue
 		var db: Array = em_b.get(id, da)
 		var c := carro_do_jogador(id, db[1])
-		if db.size() > 13 and db[13] != Aparencia.codificar(c.aparencia):
+		if db.size() > 13 and db[13] is PackedByteArray and db[13] != Aparencia.codificar(c.aparencia):
 			c.vestir(Aparencia.decodificar(db[13]))
 		if db[12] != c.explodido:
 			if db[12]:

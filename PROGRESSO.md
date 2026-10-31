@@ -11,6 +11,25 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 31/10/2026 (tarde): Personalização nova, etapa 1 de 6 (salvar de verdade + tela tipo garagem)
+Plano aprovado por ele (6 etapas): 1 salvar + tela nova · 2 boost de verdade (fogo, plasma, laser...) ·
+3 rastro das RODAS no drift (marca de pneu, fumaça, neon...) — rastro ≠ boost · 4 acessórios bem feitos
+(teto, antena, aerofólio por carro) · 5 pintura (acabamento, desenhos) e rodas · 6 dez explosões de gol.
+- **Salvar:** ele salvava, fechava e não voltava (site e PC). O que achei: ao meio-dia o arquivo mudou de
+  nome (carro.json → personalizacao.json) e o que estava salvo "sumiu"; o "ver no time" nunca foi salvo
+  (é só pra olhar). Agora: salva sozinho a cada clique ("Salvo ✓"), arquivo com versão (o da versão 1 é
+  convertido), `close()` na hora, aviso se o navegador não guarda (aba anônima). Testado: `teste_personalizacao`
+  (salvar → esquecer → abrir) e no navegador de verdade (clique no Tanque, fecha, abre: continua Tanque).
+- **Categorias separadas** (`Aparencia.ESCOLHAS`): modelo, cor dos detalhes (16), desenho, estilo e cor do
+  boost (12), teto, antena, aerofólio — teto, antena e aerofólio dá pra usar juntos. Na rede vai uma
+  fileira de bytes (PackedByteArray); número estranho vira o padrão.
+- **Tela tipo garagem:** abas na esquerda (as que ainda não têm nada aparecem "em breve"), cartões na
+  direita com rolagem pela rodinha, carro parado no meio com a câmera girando em volta (arrastar gira,
+  rodinha aproxima), cada aba leva a câmera pro lugar certo (rodas de lado, boost por trás, teto de cima);
+  na aba do boost ele fica ligado. Embaixo: ver azul/laranja, ALEATÓRIO, DESFAZER, PRONTO.
+- Aerofólio "Corrida" desenhado pra cada carro (Raio pescoço de cisne, Tanque spoiler de teto, Besouro rabo
+  de baleia, Flecha asa grande no lugar da de fábrica): nunca fica com duas asas. Vai ser refinado na etapa 4.
+
 ## 31/10/2026 (tarde): carros novos (1º: Raio), curva e ajustes no site
 - **Carros refeitos do zero, um por vez com o OK dele** (os 5 antigos e o Padrão saíram: "achatados no
   comprimento", "todos iguais"). Sistema novo `scripts/lataria.gd`: carroceria lisa por curvas de projeto

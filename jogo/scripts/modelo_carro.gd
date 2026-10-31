@@ -78,11 +78,13 @@ static func dados(modelo: int) -> Dictionary:
 	return MODELOS[clampi(modelo, 0, MODELOS.size() - 1)]
 
 
-static func corpo(modelo := 0) -> ArrayMesh:
+static func corpo(modelo := 0, com_aerofolio := false) -> ArrayMesh:
+	# com o aerofólio do Personalizar, o carro que já tem asa de fábrica perde a dele (nunca fica com duas)
 	modelo = clampi(modelo, 0, MODELOS.size() - 1)
-	if not malhas_corpo.has(modelo):
-		malhas_corpo[modelo] = montar_corpo(modelo)
-	return malhas_corpo[modelo]
+	var chave := "%d %s" % [modelo, com_aerofolio]
+	if not malhas_corpo.has(chave):
+		malhas_corpo[chave] = montar_corpo(modelo, com_aerofolio)
+	return malhas_corpo[chave]
 
 
 static func roda(modelo := 0, tras := false) -> ArrayMesh:
@@ -96,14 +98,16 @@ static func roda(modelo := 0, tras := false) -> ArrayMesh:
 	return malhas_roda[chave]
 
 
-static func enfeite(qual: int) -> ArrayMesh:
+static func enfeite(qual: int, modelo := 0) -> ArrayMesh:
 	# antena, chapéu ou aerofólio (o 0 é sem enfeite). Pedaços "pintura" (cor do time),
-	# "escuro" e "detalhe" (cor dos detalhes), que cada carro troca pelos seus
+	# "escuro" e "detalhe" (cor dos detalhes), que cada carro troca pelos seus.
+	# O aerofólio é desenhado pra cada carro; antena e chapéu são os mesmos, só mudam de lugar.
 	if qual <= 0:
 		return null
-	if not malhas_enfeite.has(qual):
-		malhas_enfeite[qual] = montar_enfeite(qual)
-	return malhas_enfeite[qual]
+	var chave := "%d %d" % [qual, modelo if qual == 3 else 0]
+	if not malhas_enfeite.has(chave):
+		malhas_enfeite[chave] = montar_enfeite(qual, clampi(modelo, 0, MODELOS.size() - 1))
+	return malhas_enfeite[chave]
 
 
 static func posicao_enfeite(modelo: int, qual: int) -> Vector3:
@@ -114,9 +118,7 @@ static func posicao_enfeite(modelo: int, qual: int) -> Vector3:
 			return d.traseira - Vector3(0.0, 0.11, 0.42) + Vector3(0.0, 0.0, -0.05)
 		2:
 			return d.teto - Vector3(0.0, 0.244, 0.12)
-		3:
-			return d.traseira - Vector3(0.0, 0.118, 0.56)
-	return Vector3.ZERO
+	return Vector3.ZERO   # o aerofólio já é desenhado no lugar certo de cada carro
 
 
 static func pintura(cor: Color) -> ShaderMaterial:
@@ -127,7 +129,7 @@ static func turbina() -> ShaderMaterial:
 	return Materiais.liso(Color(0.1, 0.1, 0.1), 0.5, Color(1.0, 0.45, 0.1), 0.5)
 
 
-static func montar_corpo(modelo: int) -> ArrayMesh:
+static func montar_corpo(modelo: int, com_aerofolio := false) -> ArrayMesh:
 	var p := Pecas.new()
 	match MODELOS[modelo].nome:
 		"Raio":
@@ -137,7 +139,7 @@ static func montar_corpo(modelo: int) -> ArrayMesh:
 		"Besouro":
 			montar_besouro(p)
 		"Flecha":
-			montar_flecha(p)
+			montar_flecha(p, not com_aerofolio)
 	# turbina do boost (o rastro sai dali)
 	var t: Vector3 = MODELOS[modelo].turbina
 	var deitado := Transform3D(Basis(Vector3.RIGHT, PI / 2.0), t + Vector3(0, 0, -0.06))
@@ -477,7 +479,7 @@ const FLECHA_LATERAL := {
 }
 
 
-static func montar_flecha(p: Pecas) -> void:
+static func montar_flecha(p: Pecas, asa_de_fabrica := true) -> void:
 	var d := MODELOS[3] as Dictionary
 	lataria(p, FLECHA_CORPO)
 	lataria(p, FLECHA_LATERAL, [], true)
@@ -516,12 +518,14 @@ static func montar_flecha(p: Pecas) -> void:
 	for lado in [-1.0, 1.0]:
 		Modelagem.caixa(p.pinta, Vector3(0.41 * lado, -0.085, -0.69), Vector3(0.01, 0.075, 0.15))
 	# asa traseira: mais baixa, duas lâminas, placas pintadas com luz, suporte no meio
-	Modelagem.caixa(p.pinta, Vector3(0.0, 0.235, 0.61), Vector3(0.66, 0.018, 0.13), Basis(Vector3.RIGHT, deg_to_rad(-8.0)))
-	Modelagem.caixa(p.escuro, Vector3(0.0, 0.265, 0.66), Vector3(0.66, 0.01, 0.06), Basis(Vector3.RIGHT, deg_to_rad(-28.0)))
-	for lado in [-1.0, 1.0]:
-		Modelagem.caixa(p.pinta, Vector3(0.335 * lado, 0.2, 0.62), Vector3(0.012, 0.13, 0.2))
-		Modelagem.caixa(p.lanterna, Vector3(0.342 * lado, 0.22, 0.715), Vector3(0.004, 0.06, 0.008))
-	Modelagem.caixa(p.escuro, Vector3(0.0, 0.14, 0.6), Vector3(0.025, 0.17, 0.06))
+	# (com o aerofólio do Personalizar ela sai e entra a grande)
+	if asa_de_fabrica:
+		Modelagem.caixa(p.pinta, Vector3(0.0, 0.235, 0.61), Vector3(0.66, 0.018, 0.13), Basis(Vector3.RIGHT, deg_to_rad(-8.0)))
+		Modelagem.caixa(p.escuro, Vector3(0.0, 0.265, 0.66), Vector3(0.66, 0.01, 0.06), Basis(Vector3.RIGHT, deg_to_rad(-28.0)))
+		for lado in [-1.0, 1.0]:
+			Modelagem.caixa(p.pinta, Vector3(0.335 * lado, 0.2, 0.62), Vector3(0.012, 0.13, 0.2))
+			Modelagem.caixa(p.lanterna, Vector3(0.342 * lado, 0.22, 0.715), Vector3(0.004, 0.06, 0.008))
+		Modelagem.caixa(p.escuro, Vector3(0.0, 0.14, 0.6), Vector3(0.025, 0.17, 0.06))
 	# luz de chuva, difusor grande e escapamento
 	Modelagem.caixa(p.lanterna, Vector3(0.0, 0.03, 0.668), Vector3(0.06, 0.02, 0.008))
 	for x in [-0.22, -0.13, -0.05, 0.05, 0.13, 0.22]:
@@ -596,10 +600,11 @@ static func montar_roda(r: Dictionary) -> ArrayMesh:
 
 # ---------------------------------------------------------------- enfeites
 
-static func montar_enfeite(qual: int) -> ArrayMesh:
+static func montar_enfeite(qual: int, modelo: int) -> ArrayMesh:
 	var pinta := Modelagem.nova()
 	var escuro := Modelagem.nova()
 	var detalhe := Modelagem.nova()
+	var luz := Modelagem.nova()
 	match qual:
 		1:
 			# antena atrás à direita, com bolinha na ponta e bandeirinha do time
@@ -615,19 +620,73 @@ static func montar_enfeite(qual: int) -> ArrayMesh:
 			Modelagem.torno(escuro, [Vector2(0.0, 0.0), Vector2(0.16, 0.0), Vector2(0.16, 0.014), Vector2(0.095, 0.016), Vector2(0.1, 0.175), Vector2(0.0, 0.175)], 24, onde)
 			Modelagem.torno(detalhe, [Vector2(0.0975, 0.03), Vector2(0.0985, 0.065)], 24, onde)
 		3:
-			# aerofólio alto de corrida (vai ser refeito depois dos carros novos)
-			var inclinado := Basis(Vector3.RIGHT, deg_to_rad(-9.0))
-			Modelagem.caixa(pinta, Vector3(0.0, 0.37, 0.57), Vector3(0.86, 0.02, 0.17), inclinado)
-			for x in [-0.22, 0.22]:
-				Modelagem.caixa(escuro, Vector3(x, 0.26, 0.56), Vector3(0.018, 0.21, 0.045))
-			for x in [-0.435, 0.435]:
-				Modelagem.caixa(detalhe, Vector3(x, 0.365, 0.575), Vector3(0.012, 0.07, 0.2))
+			match MODELOS[modelo].nome:
+				"Raio":
+					aerofolio_raio(pinta, escuro, detalhe, luz)
+				"Tanque":
+					aerofolio_tanque(pinta, escuro, detalhe, luz)
+				"Besouro":
+					aerofolio_besouro(pinta, escuro, detalhe, luz)
+				"Flecha":
+					aerofolio_flecha(pinta, escuro, detalhe, luz)
 	var malha := ArrayMesh.new()
+	Modelagem.adicionar(malha, luz, "luz de freio", Materiais.liso(Color(1.0, 0.1, 0.1), 0.3, Color(1.0, 0.06, 0.04), 3.5))
 	Modelagem.adicionar(malha, escuro, "escuro", Materiais.liso(Color(0.035, 0.04, 0.045), 0.45, Color.BLACK, 0.0, 0.3))
 	Modelagem.adicionar(malha, detalhe, "detalhe", Materiais.liso(Color(0.78, 0.8, 0.84), 0.22, Color.BLACK, 0.0, 0.9))
 	if qual != 2:
 		Modelagem.adicionar(malha, pinta, "pintura", pintura(Color(0.2, 0.45, 0.95)))
 	return malha
+
+
+static func inclinada(graus: float) -> Basis:
+	return Basis(Vector3.RIGHT, deg_to_rad(graus))
+
+
+static func aerofolio_raio(pinta: SurfaceTool, escuro: SurfaceTool, detalhe: SurfaceTool, luz: SurfaceTool) -> void:
+	# asa de corrida "pescoço de cisne": as colunas sobem da tampa e pegam a asa por cima
+	Modelagem.caixa(pinta, Vector3(0.0, 0.275, 0.6), Vector3(0.84, 0.02, 0.16), inclinada(-8.0))
+	Modelagem.caixa(escuro, Vector3(0.0, 0.302, 0.665), Vector3(0.84, 0.01, 0.06), inclinada(-28.0))
+	for lado in [-1.0, 1.0]:
+		var x: float = 0.2 * lado
+		Modelagem.caixa(escuro, Vector3(x, 0.19, 0.5), Vector3(0.02, 0.16, 0.05), inclinada(10.0))
+		Modelagem.caixa(escuro, Vector3(x, 0.28, 0.54), Vector3(0.02, 0.03, 0.1), inclinada(-30.0))
+		Modelagem.caixa(escuro, Vector3(x, 0.292, 0.585), Vector3(0.02, 0.02, 0.04))
+		Modelagem.caixa(detalhe, Vector3(0.425 * lado, 0.27, 0.615), Vector3(0.012, 0.1, 0.24))
+		Modelagem.caixa(luz, Vector3(0.432 * lado, 0.27, 0.73), Vector3(0.004, 0.06, 0.008))
+
+
+static func aerofolio_tanque(pinta: SurfaceTool, escuro: SurfaceTool, detalhe: SurfaceTool, luz: SurfaceTool) -> void:
+	# spoiler de teto: sai da ponta de trás da cabine, caindo um pouco, com placas e luz de freio
+	Modelagem.caixa(pinta, Vector3(0.0, 0.372, 0.555), Vector3(0.7, 0.022, 0.14), inclinada(10.0))
+	Modelagem.caixa(escuro, Vector3(0.0, 0.358, 0.62), Vector3(0.7, 0.012, 0.03), inclinada(10.0))
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(detalhe, Vector3(0.352 * lado, 0.36, 0.55), Vector3(0.014, 0.06, 0.16), inclinada(10.0))
+		Modelagem.caixa(escuro, Vector3(0.2 * lado, 0.35, 0.5), Vector3(0.03, 0.03, 0.06))
+	Modelagem.caixa(luz, Vector3(0.0, 0.36, 0.625), Vector3(0.36, 0.012, 0.008), inclinada(10.0))
+
+
+static func aerofolio_besouro(pinta: SurfaceTool, escuro: SurfaceTool, detalhe: SurfaceTool, luz: SurfaceTool) -> void:
+	# "rabo de baleia" em cima da tampa do motor: tampa alta e chata com borda de borracha e grelha
+	var topo := Lataria.valor(BESOURO_CORPO.topo, 0.56)
+	Modelagem.caixa(pinta, Vector3(0.0, topo + 0.07, 0.6), Vector3(0.52, 0.022, 0.2), inclinada(-4.0))
+	Modelagem.caixa(escuro, Vector3(0.0, topo + 0.07, 0.705), Vector3(0.56, 0.03, 0.025))
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(pinta, Vector3(0.25 * lado, topo + 0.035, 0.6), Vector3(0.022, 0.07, 0.2))
+	for k in 5:
+		Modelagem.caixa(escuro, Vector3(0.0, topo + 0.083, 0.53 + 0.03 * k), Vector3(0.36, 0.006, 0.012))
+	Modelagem.caixa(detalhe, Vector3(0.0, topo + 0.07, 0.502), Vector3(0.5, 0.012, 0.012))
+
+
+static func aerofolio_flecha(pinta: SurfaceTool, escuro: SurfaceTool, detalhe: SurfaceTool, luz: SurfaceTool) -> void:
+	# asa grande de três lâminas no lugar da de fábrica, placas altas com luz, asinha baixa e duas colunas
+	Modelagem.caixa(pinta, Vector3(0.0, 0.285, 0.6), Vector3(0.74, 0.022, 0.17), inclinada(-10.0))
+	Modelagem.caixa(escuro, Vector3(0.0, 0.322, 0.665), Vector3(0.74, 0.012, 0.08), inclinada(-32.0))
+	Modelagem.caixa(detalhe, Vector3(0.0, 0.352, 0.695), Vector3(0.74, 0.008, 0.035), inclinada(-55.0))
+	Modelagem.caixa(escuro, Vector3(0.0, 0.11, 0.65), Vector3(0.46, 0.012, 0.06), inclinada(-12.0))
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(pinta, Vector3(0.375 * lado, 0.24, 0.63), Vector3(0.012, 0.2, 0.26))
+		Modelagem.caixa(luz, Vector3(0.383 * lado, 0.24, 0.758), Vector3(0.004, 0.12, 0.008))
+		Modelagem.caixa(escuro, Vector3(0.06 * lado, 0.18, 0.6), Vector3(0.02, 0.2, 0.06))
 
 
 static func meia_bola(raio: float) -> Array:

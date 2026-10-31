@@ -15,7 +15,7 @@ func rodar() -> void:
 	var dirigir := "--dirigir" in OS.get_cmdline_user_args()
 	var nome := "1º amigo" if dirigir else "2º amigo"
 	# cada um personalizou de um jeito (o host tem que ver o de cada um)
-	Aparencia.salva = {"modelo": 0, "detalhe": 3, "fogo": 1, "rastro": 2, "enfeite": 2} if dirigir else {"modelo": 0, "detalhe": 5, "fogo": 4, "rastro": 1, "enfeite": 1}
+	Aparencia.salva = {"modelo": 1, "detalhe": 4, "boost_cor": 1, "boost": 2, "teto": 1} if dirigir else {"modelo": 3, "detalhe": 6, "boost_cor": 4, "boost": 1, "antena": 1}
 	for tentativa in 20:
 		if rede.entrar("127.0.0.1") == OK:
 			break
@@ -34,8 +34,8 @@ func rodar() -> void:
 	await create_timer(1.0).timeout
 	var meu: RigidBody3D = partida.carro
 	print("%s: entrou. Vejo %d carros, placar \"%s\"" % [nome, partida.carros.size(), partida.hud.get_node("Placar").text.replace("\n", " / ")])
-	var visuais: Array = partida.carros.values().map(func(c: Node) -> String: return "%s %s" % [Aparencia.ENFEITES[c.aparencia.enfeite], Aparencia.FOGOS[c.aparencia.fogo][0]])
-	print("%s: carros que eu vejo (enfeite e fogo): %s" % [nome, ", ".join(visuais)])
+	var visuais: Array = partida.carros.values().map(func(c: Node) -> String: return "%s %s" % [Aparencia.MODELOS[c.aparencia.modelo], Aparencia.CORES_FOGO[c.aparencia.boost_cor][0]])
+	print("%s: carros que eu vejo (modelo e cor do boost): %s" % [nome, ", ".join(visuais)])
 	if not dirigir:
 		await create_timer(8.0).timeout
 		print("%s: saindo da partida" % nome)

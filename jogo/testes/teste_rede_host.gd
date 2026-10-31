@@ -28,8 +28,8 @@ func rodar() -> void:
 	var times: Array = ids.map(func(id: int) -> String: return partida.times[id])
 	print("host: entraram 2 amigos. Times: host %s, amigos %s" % [partida.times[1], " e ".join(times)])
 	await create_timer(1.0).timeout
-	var visuais: Array = ids.map(func(id: int) -> String: return "%s %s" % [Aparencia.ENFEITES[partida.carros[id].aparencia.enfeite], Aparencia.FOGOS[partida.carros[id].aparencia.fogo][0]])
-	print("host: personalização dos amigos (enfeite e fogo): %s" % ", ".join(visuais))
+	var visuais: Array = ids.map(func(id: int) -> String: return "%s %s" % [Aparencia.MODELOS[partida.carros[id].aparencia.modelo], Aparencia.CORES_FOGO[partida.carros[id].aparencia.boost_cor][0]])
+	print("host: personalização dos amigos (modelo e cor do boost): %s" % ", ".join(visuais))
 	# o amigo que dirige é o que se mexer (o número de cada jogador é sorteado)
 	var comeco := {}
 	for id in ids:
