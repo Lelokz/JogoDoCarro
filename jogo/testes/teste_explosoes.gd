@@ -52,23 +52,28 @@ func rodar() -> void:
 
 	partida.saida_de_bola()
 	partida.comecar()
-	await colocar(carro, Vector3(4, 0.32, -43), Basis())
+	await colocar(carro, Vector3(2, 0.32, -40), Basis())
 	await colocar(outro, Vector3(-25, 0.32, 0), Basis())
 	var explosoes_antes: int = partida.numero_explosao
 	bola.freeze = false
 	bola.visible = true
 	bola.global_transform = Transform3D(Basis(), Vector3(0, 2, -42))
 	bola.linear_velocity = Vector3(0, 0, -28)
+	# o carro vem a toda atrás da bola, na direção do gol (como ele testou com o G)
+	carro.linear_velocity = Vector3(0, 0, -22)
+	var z_antes: float = carro.global_position.z
 	var mais_alto := 0.0
+	var mais_longe := 0.0
 	var mais_rapido := 0.0
 	var onde_explodiu := Vector3.ZERO
-	for i in 360:
+	for i in 600:
 		await physics_frame
 		mais_alto = maxf(mais_alto, carro.global_position.y)
+		mais_longe = maxf(mais_longe, carro.global_position.z - z_antes)
 		mais_rapido = maxf(mais_rapido, carro.linear_velocity.length())
 		if partida.explosoes.size() > 0:
 			onde_explodiu = partida.explosoes[-1][1]
-	print("gol: explosões novas %d, em z = %.1f (o gol é z = -50) · carro a 8 m do gol jogado a %.1f m/s, subiu até %.1f m · carro longe a %.1f m/s" % [partida.numero_explosao - explosoes_antes, onde_explodiu.z, mais_rapido, mais_alto, outro.linear_velocity.length()])
+	print("gol: explosões novas %d, em z = %.1f (o gol é z = -50) · carro vindo a 80 km/h atrás da bola: voou %.1f m pra trás e subiu até %.1f m · carro longe a %.1f m/s" % [partida.numero_explosao - explosoes_antes, onde_explodiu.z, mais_longe, mais_alto, outro.linear_velocity.length()])
 	quit()
 
 

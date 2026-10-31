@@ -210,10 +210,15 @@ func empurrar_com_gol(c: RigidBody3D, onde: Vector3, forca: float) -> void:
 	var distancia := dif.length()
 	if distancia > RAIO_EXPLOSAO_GOL:
 		return
-	var perto := pow(1.0 - distancia / RAIO_EXPLOSAO_GOL, 0.7)
-	var direcao := (dif.normalized() + Vector3.UP * 0.75).normalized()
-	c.linear_velocity += direcao * EMPURRAO_GOL * forca * perto
-	c.angular_velocity += Vector3(randf_range(-3, 3), randf_range(-3, 3), randf_range(-3, 3)) * perto
+	var perto := pow(1.0 - distancia / RAIO_EXPLOSAO_GOL, 0.6)
+	var pra_longe := Vector3(dif.x, 0.0, dif.z)
+	if pra_longe.length() < 0.5:
+		pra_longe = Vector3(0.0, 0.0, -signf(onde.z))   # em cima da bola: sai pro campo
+	var direcao := (pra_longe.normalized() + Vector3.UP * 0.8).normalized()
+	# troca a velocidade em vez de somar: quem vinha a toda na direção do gol também sai voando pra trás
+	# (somando, uma anulava a outra e o carro só parava e subia um pouco)
+	c.linear_velocity = c.linear_velocity * (1.0 - perto) + direcao * EMPURRAO_GOL * forca * perto
+	c.angular_velocity += Vector3(randf_range(-4, 4), randf_range(-4, 4), randf_range(-4, 4)) * perto
 
 
 func ver_demolicoes() -> void:

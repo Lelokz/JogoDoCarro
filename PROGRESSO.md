@@ -33,6 +33,14 @@ Diário do projeto. O mais novo fica em cima.
   - Online: o amigo calcula o próprio carro na hora, e o PC dele não sabia da explosão (o host empurrava e
     a correção trazia só uns centímetros). Agora a explosão do gol chega com a força e cada um empurra o
     próprio carro. Teste de rede: no PC do amigo, o carro dele subiu 5,8 m com a explosão a 4 m.
+- **Explosão do gol, 2ª volta** (ele: "parecia um peido", "o carro não voa pra longe"):
+  - O empurrão era SOMADO à velocidade: quem vinha a toda pro gol tinha a velocidade anulada (parava e subia
+    3 m). Agora TROCA a velocidade por "pra longe do gol e pra cima" (perto = troca inteira). Teste novo:
+    carro vindo a 80 km/h atrás da bola voa 82 m pra trás e sobe 18 m.
+  - Explosão do gol refeita (`explosao.gd`): clarão de ~7 m + miolo branco, anel de choque em pé saindo do
+    gol e outro correndo no chão, 220 riscos de faísca esticados na direção do voo, faíscas miúdas, fumaça
+    na cor do time, confete do time rodando e pedaços escuros. Sai do gol pro campo. Mesmo shader do rastro.
+  - `testes/fotos_explosao.gd`: 6 fotos em câmera lenta (0,04 s a 2,2 s depois do gol).
 - **Achado:** os ajustes salvos no F1 (`jogo/ajustes/carro.json`) só valiam no PC; o site rodava com os
   valores originais. Agora os padrões do código são os dele: curva 1,3 (pediu mais curva: era 1,15),
   aderência 54, giro no freio de mão 1,3, força da batida da bola 0,8.
