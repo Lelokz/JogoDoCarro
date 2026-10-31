@@ -18,7 +18,11 @@ static func nova() -> SurfaceTool:
 
 
 static func adicionar(malha: ArrayMesh, st: SurfaceTool, nome: String, material: Material) -> void:
-	st.commit(malha)
+	# peça vazia (ex.: carro sem vidro) não entra: senão o nome e o material iam pra peça de antes
+	var dados := st.commit_to_arrays()
+	if dados[Mesh.ARRAY_VERTEX] == null or dados[Mesh.ARRAY_VERTEX].is_empty():
+		return
+	malha.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, dados)
 	var i := malha.get_surface_count() - 1
 	malha.surface_set_name(i, nome)
 	malha.surface_set_material(i, material)

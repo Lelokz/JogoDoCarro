@@ -31,6 +31,11 @@ Diário do projeto. O mais novo fica em cima.
 - **Flecha** (4º): fórmula de roda exposta, bico pontudo, sidepods, cockpit aberto com piloto de capacete
   (cor dos detalhes; o chapéu vai no capacete), tomada de ar, asa dianteira e traseira, braços de suspensão,
   rodas finas na frente e largas atrás (`roda_tras`). Caixa 0,85 × 0,29 × 1,29 m.
+  - 2ª versão (ele achou "meio estranho"): corpo mais fino e afiado, sidepods esculpidos com a boca escura,
+    assoalho escuro, barbatana no motor, halo em volta do capacete, asa dianteira de 3 lâminas, asa
+    traseira mais baixa com 2 lâminas, retrovisores, difusor maior, suspensão em V.
+  - Bug achado: peça vazia (o Flecha não tem vidro nem farol) passava o nome/material pra peça anterior
+    (as peças escuras viravam farol branco). `Modelagem.adicionar` agora pula peça vazia.
 - **Explosão do gol consertada** (ele viu ela no meio do estádio e o carro mal voando):
   - As partículas eram soltas antes de a explosão ir pro lugar e ficam no mundo → saíam do ponto zero (meio
     do campo). Agora vão pro lugar e só depois disparam. A foto de teste agora é no gol (antes era no meio,

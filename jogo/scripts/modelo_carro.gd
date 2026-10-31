@@ -57,10 +57,10 @@ const MODELOS := [
 		"centro": Vector3(0.0, -0.02, 0.0),
 		"rodas": Vector3(0.44, -0.47, 0.44),
 		"turbina": Vector3(0.0, -0.045, 0.665),
-		"teto": Vector3(0.0, 0.195, -0.01),       # o chapéu vai no capacete do piloto
+		"teto": Vector3(0.0, 0.195, 0.0),         # o chapéu vai no capacete do piloto
 		"traseira": Vector3(0.0, 0.0, 0.4),
-		"roda": {"largura": 0.09, "aro": 0.12, "raios": 5},
-		"roda_tras": {"largura": 0.17, "aro": 0.12, "raios": 5},
+		"roda": {"largura": 0.1, "aro": 0.13, "raios": 5},
+		"roda_tras": {"largura": 0.17, "aro": 0.13, "raios": 5},
 	},
 ]
 const ALTURA_RODA := -0.08
@@ -459,21 +459,21 @@ static func montar_besouro(p: Pecas) -> void:
 # traseira grande nas colunas e braços de suspensão até as rodas. Rodas finas na frente, largas atrás.
 
 const FLECHA_CORPO := {
-	"topo": [[-0.745, -0.075], [-0.66, -0.05], [-0.45, 0.0], [-0.25, 0.05], [-0.13, 0.08], [0.0, 0.09], [0.1, 0.19], [0.22, 0.2], [0.4, 0.12], [0.6, 0.06], [0.665, 0.03]],
-	"fundo": [[-0.745, -0.1], [-0.66, -0.13], [0.665, -0.13]],
-	"cintura": [[-0.745, -0.09], [-0.3, -0.06], [0.665, -0.04]],
-	"largura": [[-0.745, 0.035], [-0.6, 0.07], [-0.4, 0.11], [-0.2, 0.17], [0.1, 0.2], [0.4, 0.17], [0.6, 0.12], [0.665, 0.1]],
-	"ombro": [[-0.745, 0.65], [-0.1, 0.65], [0.15, 0.45], [0.665, 0.6]],
-	"forma": [[-0.745, 2.5], [0.665, 2.5]],
+	"topo": [[-0.75, -0.085], [-0.68, -0.07], [-0.5, -0.035], [-0.3, 0.02], [-0.16, 0.06], [-0.05, 0.075], [0.06, 0.16], [0.16, 0.185], [0.3, 0.15], [0.5, 0.09], [0.665, 0.05]],
+	"fundo": [[-0.75, -0.1], [-0.68, -0.11], [0.665, -0.12]],
+	"cintura": [[-0.75, -0.095], [-0.3, -0.06], [0.665, -0.05]],
+	"largura": [[-0.75, 0.05], [-0.62, 0.065], [-0.42, 0.09], [-0.22, 0.14], [0.0, 0.165], [0.25, 0.15], [0.5, 0.1], [0.665, 0.07]],
+	"ombro": [[-0.75, 0.75], [-0.1, 0.72], [0.1, 0.3], [0.35, 0.35], [0.665, 0.6]],
+	"forma": [[-0.75, 3.2], [-0.1, 3.0], [0.15, 2.6], [0.665, 3.0]],
 }
 const FLECHA_LATERAL := {
-	"x": 0.26,
-	"topo": [[-0.16, -0.03], [-0.08, 0.04], [0.22, 0.04], [0.42, -0.04]],
-	"fundo": [[-0.16, -0.12], [0.42, -0.12]],
-	"cintura": [[-0.16, -0.05], [0.42, -0.06]],
-	"largura": [[-0.16, 0.04], [-0.05, 0.1], [0.25, 0.09], [0.42, 0.03]],
-	"ombro": [[-0.16, 0.85], [0.42, 0.85]],
-	"forma": [[-0.16, 3.0], [0.42, 3.0]],
+	"x": 0.215,
+	"topo": [[-0.17, -0.005], [-0.12, 0.04], [0.05, 0.045], [0.3, 0.0], [0.48, -0.05]],
+	"fundo": [[-0.17, -0.06], [-0.05, -0.1], [0.48, -0.1]],
+	"cintura": [[-0.17, 0.005], [0.1, 0.0], [0.48, -0.06]],
+	"largura": [[-0.17, 0.09], [0.0, 0.1], [0.25, 0.075], [0.48, 0.03]],
+	"ombro": [[-0.17, 0.85], [0.48, 0.7]],
+	"forma": [[-0.17, 4.0], [0.48, 3.0]],
 }
 
 
@@ -482,44 +482,62 @@ static func montar_flecha(p: Pecas) -> void:
 	lataria(p, FLECHA_CORPO)
 	lataria(p, FLECHA_LATERAL, [], true)
 	p.usou_detalhe = true
-	# cockpit aberto: buraco escuro, piloto de capacete com viseira e o arco de proteção
-	Modelagem.caixa(p.escuro, Vector3(0.0, 0.088, -0.04), Vector3(0.2, 0.012, 0.22))
-	Modelagem.torno(p.detalhe, meia_bola(0.07), 18, Transform3D(Basis(), Vector3(0.0, 0.125, -0.01)))
-	Modelagem.caixa(p.escuro, Vector3(0.0, 0.135, -0.066), Vector3(0.1, 0.03, 0.02), Basis(Vector3.RIGHT, deg_to_rad(-15.0)))
-	Modelagem.caixa(p.escuro, Vector3(0.0, 0.16, -0.12), Vector3(0.016, 0.016, 0.16), Basis(Vector3.RIGHT, deg_to_rad(-25.0)))
 	for lado in [-1.0, 1.0]:
-		Modelagem.caixa(p.escuro, Vector3(0.09 * lado, 0.14, -0.03), Vector3(0.014, 0.014, 0.2), Basis(Vector3.UP, deg_to_rad(-10.0 * lado)))
-	# tomada de ar em cima do motor
-	Modelagem.caixa(p.escuro, Vector3(0.0, 0.17, 0.085), Vector3(0.09, 0.045, 0.02))
-	# asa dianteira: duas lâminas e placas nas pontas
-	Modelagem.caixa(p.pinta, Vector3(0.0, -0.105, -0.69), Vector3(0.84, 0.014, 0.12))
-	Modelagem.caixa(p.escuro, Vector3(0.0, -0.08, -0.655), Vector3(0.78, 0.01, 0.06), Basis(Vector3.RIGHT, deg_to_rad(-18.0)))
+		# boca da entrada de ar na frente de cada sidepod
+		Modelagem.caixa(p.escuro, Vector3(0.215 * lado, 0.0, -0.172), Vector3(0.15, 0.06, 0.01))
+		# retrovisor no braço, em cima do sidepod
+		Modelagem.caixa(p.pinta, Vector3(0.21 * lado, 0.11, -0.13), Vector3(0.07, 0.03, 0.025))
+		Modelagem.caixa(p.escuro, Vector3(0.18 * lado, 0.085, -0.13), Vector3(0.01, 0.05, 0.01))
+	# assoalho escuro entre as rodas (liga tudo por baixo, como nos fórmulas)
+	Modelagem.caixa(p.escuro, Vector3(0.0, -0.125, 0.1), Vector3(0.66, 0.014, 0.8))
+	# cockpit aberto: borda escura, piloto de capacete com viseira, e o halo em volta da cabeça
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.078, -0.03), Vector3(0.17, 0.01, 0.2))
+	Modelagem.torno(p.detalhe, meia_bola(0.075), 20, Transform3D(Basis(), Vector3(0.0, 0.12, -0.0)))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.128, -0.06), Vector3(0.11, 0.032, 0.03), Basis(Vector3.RIGHT, deg_to_rad(-12.0)))
+	var halo := []
+	for k in 13:
+		var a := PI * k / 12.0
+		halo.append(Vector3(0.11 * cos(a), 0.185, -0.02 - 0.11 * sin(a)))
+	for k in halo.size() - 1:
+		var de: Vector3 = halo[k]
+		var ate: Vector3 = halo[k + 1]
+		Modelagem.caixa(p.escuro, (de + ate) / 2.0, Vector3(0.022, 0.022, de.distance_to(ate) + 0.004), Basis.looking_at(ate - de, Vector3.UP))
 	for lado in [-1.0, 1.0]:
-		Modelagem.caixa(p.escuro, Vector3(0.42 * lado, -0.08, -0.69), Vector3(0.012, 0.07, 0.16))
-	# asa traseira: perfil grande + aba, placas nas pontas com luz e a coluna do meio
-	Modelagem.caixa(p.pinta, Vector3(0.0, 0.3, 0.6), Vector3(0.7, 0.022, 0.16), Basis(Vector3.RIGHT, deg_to_rad(-10.0)))
-	Modelagem.caixa(p.pinta, Vector3(0.0, 0.335, 0.655), Vector3(0.7, 0.012, 0.07), Basis(Vector3.RIGHT, deg_to_rad(-30.0)))
+		Modelagem.caixa(p.escuro, Vector3(0.11 * lado, 0.13, -0.01), Vector3(0.02, 0.11, 0.02))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.14, -0.15), Vector3(0.02, 0.1, 0.02), Basis(Vector3.RIGHT, deg_to_rad(20.0)))
+	# barbatana em cima da tampa do motor e a tomada de ar
+	Modelagem.caixa(p.pinta, Vector3(0.0, 0.2, 0.36), Vector3(0.008, 0.08, 0.36), Basis(Vector3.RIGHT, deg_to_rad(8.0)))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.16, 0.06), Vector3(0.07, 0.04, 0.02))
+	# asa dianteira: três lâminas que sobem nas pontas, placas laterais
+	for k in 3:
+		var y := -0.115 + 0.018 * k
+		var z := -0.705 + 0.03 * k
+		Modelagem.caixa(p.pinta if k == 0 else p.escuro, Vector3(0.0, y, z), Vector3(0.8 - 0.06 * k, 0.01, 0.08 - 0.012 * k), Basis(Vector3.RIGHT, deg_to_rad(-8.0 - 10.0 * k)))
 	for lado in [-1.0, 1.0]:
-		Modelagem.caixa(p.escuro, Vector3(0.355 * lado, 0.25, 0.61), Vector3(0.015, 0.17, 0.24))
-		Modelagem.caixa(p.lanterna, Vector3(0.363 * lado, 0.31, 0.72), Vector3(0.004, 0.04, 0.012))
-	Modelagem.caixa(p.escuro, Vector3(0.0, 0.17, 0.6), Vector3(0.03, 0.24, 0.07))
-	# luz de chuva atrás e luz no bico
-	Modelagem.caixa(p.lanterna, Vector3(0.0, 0.035, 0.668), Vector3(0.07, 0.02, 0.01))
-	Modelagem.caixa(p.farol, Vector3(0.0, -0.065, -0.742), Vector3(0.03, 0.01, 0.01))
-	# difusor atrás
-	for x in [-0.1, -0.03, 0.03, 0.1]:
-		Modelagem.caixa(p.escuro, Vector3(x, -0.12, 0.64), Vector3(0.008, 0.05, 0.07))
-	# braços da suspensão: do corpo até o meio de cada roda (em cima e embaixo)
+		Modelagem.caixa(p.pinta, Vector3(0.41 * lado, -0.085, -0.69), Vector3(0.01, 0.075, 0.15))
+	# asa traseira: mais baixa, duas lâminas, placas pintadas com luz, suporte no meio
+	Modelagem.caixa(p.pinta, Vector3(0.0, 0.235, 0.61), Vector3(0.66, 0.018, 0.13), Basis(Vector3.RIGHT, deg_to_rad(-8.0)))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.265, 0.66), Vector3(0.66, 0.01, 0.06), Basis(Vector3.RIGHT, deg_to_rad(-28.0)))
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(p.pinta, Vector3(0.335 * lado, 0.2, 0.62), Vector3(0.012, 0.13, 0.2))
+		Modelagem.caixa(p.lanterna, Vector3(0.342 * lado, 0.22, 0.715), Vector3(0.004, 0.06, 0.008))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.14, 0.6), Vector3(0.025, 0.17, 0.06))
+	# luz de chuva, difusor grande e escapamento
+	Modelagem.caixa(p.lanterna, Vector3(0.0, 0.03, 0.668), Vector3(0.06, 0.02, 0.008))
+	for x in [-0.22, -0.13, -0.05, 0.05, 0.13, 0.22]:
+		Modelagem.caixa(p.escuro, Vector3(x, -0.105, 0.64), Vector3(0.008, 0.06, 0.1), Basis(Vector3.RIGHT, deg_to_rad(-15.0)))
+	Modelagem.caixa(p.escuro, Vector3(0.0, -0.08, 0.66), Vector3(0.5, 0.01, 0.06), Basis(Vector3.RIGHT, deg_to_rad(-15.0)))
+	# braços da suspensão: do corpo até o meio de cada roda (em cima e embaixo, em V)
 	for z in [d.rodas.y, d.rodas.z]:
 		for lado in [-1.0, 1.0]:
-			var corpo_x := Lataria.valor(FLECHA_CORPO.largura, z) * 0.85
+			var corpo_x := Lataria.valor(FLECHA_CORPO.largura, z) * 0.9
 			var roda_x: float = d.rodas.x - 0.05
-			for y in [[-0.11, -0.13], [-0.03, -0.1]]:
-				var de := Vector3(corpo_x * lado, y[0], z)
-				var ate := Vector3(roda_x * lado, y[1], z)
-				var meio := (de + ate) / 2.0
-				var giro := Basis(Vector3.BACK, atan2(ate.y - de.y, ate.x - de.x))
-				Modelagem.caixa(p.escuro, meio, Vector3(de.distance_to(ate), 0.012, 0.025), giro)
+			for y in [[-0.09, -0.13], [-0.01, -0.1]]:
+				for dz in [-0.05, 0.05]:
+					var de := Vector3(corpo_x * lado, y[0], z + dz)
+					var ate := Vector3(roda_x * lado, y[1], z)
+					var meio := (de + ate) / 2.0
+					Modelagem.caixa(p.escuro, meio, Vector3(0.01, 0.01, de.distance_to(ate)), Basis.looking_at(ate - de, Vector3.UP))
 
 
 # ---------------------------------------------------------------- rodas
