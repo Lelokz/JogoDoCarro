@@ -338,6 +338,7 @@ func virar_vitrine() -> void:
 	carro.process_mode = Node.PROCESS_MODE_DISABLED
 	altura_carro = carro.global_position.y if carro.global_position.y > 0.2 else 0.32
 	carro.vestir(Aparencia.minha())
+	assentar_rodas()
 	carro.rastro.process_mode = Node.PROCESS_MODE_ALWAYS   # o carro está parado, mas o boost aparece no Personalizar
 	podio.mesh = malha_podio()
 	podio.visible = false
@@ -370,6 +371,13 @@ func girar_carro() -> void:
 	var balanco := Vector3(sin(tempo * 0.15) * 0.25, sin(tempo * 0.21) * 0.06, 0.0) * (1.0 - p)
 	camera.global_position = CAMERA.lerp(CAMERA_PODIO, p) + balanco
 	camera.look_at(OLHAR.lerp(OLHAR_PODIO, p))
+
+
+func assentar_rodas() -> void:
+	# o carro do menu não roda a física: as rodas ficam onde ficariam com ele parado no chão
+	for i in 4:
+		carro.compressao[i] = ModeloCarro.COMPRESSAO_PARADO
+	carro.atualizar_rodas_desenhadas(0.0)
 
 
 func malha_podio() -> ArrayMesh:

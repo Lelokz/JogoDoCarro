@@ -107,12 +107,9 @@ var aparencia := Aparencia.PADRAO.duplicate()   # o que o dono escolheu no Perso
 func _ready() -> void:
 	add_to_group("carros")
 	ponto_inicial = global_transform
-	for roda in rodas:
-		var pneu: MeshInstance3D = roda.get_node("Pneu")
-		pneu.mesh = ModeloCarro.roda()
-		for i in pneu.mesh.get_surface_count():
-			if pneu.mesh.surface_get_name(i) == "aro":
-				pneu.set_surface_override_material(i, detalhe)
+	# cada carro com a sua caixa de batida (o modelo muda o tamanho dela)
+	$Forma.shape = BoxShape3D.new()
+	inertia = ModeloCarro.INERCIA
 	$Corpo.add_child(enfeite)
 	criar_rastro()
 	vestir(aparencia)
@@ -459,12 +456,22 @@ func vestir(escolha: Dictionary) -> void:
 	var fogo: Color = Aparencia.FOGOS[aparencia.fogo][1]
 	turbina.set_shader_parameter("brilho", fogo)
 	montar_rastro(aparencia.rastro, fogo)
+	# modelo: desenho, rodas e (como no Rocket League) caixa de batida e lugar das rodas
+	var d := ModeloCarro.dados(aparencia.modelo)
+	$Forma.shape.size = d.caixa
+	$Forma.position = d.centro
+	var lugares := [Vector3(-d.rodas.x, 0, d.rodas.y), Vector3(d.rodas.x, 0, d.rodas.y), Vector3(-d.rodas.x, 0, d.rodas.z), Vector3(d.rodas.x, 0, d.rodas.z)]
+	for i in 4:
+		rodas[i].position = lugares[i] + Vector3.UP * ModeloCarro.ALTURA_RODA
+		var pneu: MeshInstance3D = rodas[i].get_node("Pneu")
+		pneu.mesh = ModeloCarro.roda(aparencia.modelo)
+		usar_materiais(pneu)
+	rastro.position = d.turbina
 	$Corpo.mesh = ModeloCarro.corpo(aparencia.modelo)
 	usar_materiais($Corpo)
 	enfeite.mesh = ModeloCarro.enfeite(aparencia.enfeite)
 	usar_materiais(enfeite)
-	if aparencia.enfeite > 0:
-		enfeite.position.y = ModeloCarro.ALTURA_ENFEITE[aparencia.modelo][aparencia.enfeite - 1]
+	enfeite.position = ModeloCarro.posicao_enfeite(aparencia.modelo, aparencia.enfeite)
 
 
 func usar_materiais(malha: MeshInstance3D) -> void:
@@ -477,7 +484,7 @@ func usar_materiais(malha: MeshInstance3D) -> void:
 				malha.set_surface_override_material(i, tinta)
 			"turbina":
 				malha.set_surface_override_material(i, turbina)
-			"detalhe":
+			"detalhe", "aro":
 				malha.set_surface_override_material(i, detalhe)
 
 
@@ -542,7 +549,6 @@ func curva(tabela: Array, x: float) -> float:
 
 func criar_rastro() -> void:
 	rastro = CPUParticles3D.new()
-	rastro.position = Vector3(0.0, -0.03, 0.65)
 	rastro.emitting = false
 	rastro.local_coords = false
 	rastro.direction = Vector3.BACK

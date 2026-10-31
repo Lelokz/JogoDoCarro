@@ -61,7 +61,7 @@ func montar_carros() -> void:
 	sobre_modelo.add_theme_font_size_override("font_size", 16)
 	sobre_modelo.custom_minimum_size.y = 44
 	coluna.add_child(sobre_modelo)
-	coluna.add_child(Estilo.rotulo("todos andam igual: muda só o visual", 13, Estilo.TEXTO_APAGADO))
+	coluna.add_child(Estilo.rotulo("cada um tem o seu tamanho de batida;\no resto anda igual", 13, Estilo.TEXTO_APAGADO))
 
 
 func montar_detalhes() -> void:
@@ -153,6 +153,8 @@ func lista(coluna: VBoxContainer, nome: String, texto: String, opcoes: Array, po
 func escolher(nome: String, valor: int) -> void:
 	escolha[nome] = valor
 	carro.vestir(escolha)
+	if nome == "modelo":
+		get_parent().assentar_rodas()
 	if nome == "fogo" or nome == "rastro":
 		boost_ate = tempo + 2.5
 	marcar()
