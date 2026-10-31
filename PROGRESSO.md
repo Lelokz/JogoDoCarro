@@ -11,6 +11,27 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 31/10/2026 (tarde): ajustes antes da etapa 3 — carro parado no menu, suspensão de verdade, boost que é fluido
+- **Menu:** o carro não gira mais; fica parado meio de perfil, com a frente pra direita da tela
+  (`GIRO_CARRO` no `menu.gd`). No Personalizar ele continua virando pro pódio.
+- **Suspensão desenhada** (`scripts/suspensao.gd`, `carro.suspensao`): as rodas pareciam soltas no ar.
+  Agora cada roda tem manga de eixo, braço em A em cima e embaixo, amortecedor (corpo + haste cromada)
+  com a mola em volta (na cor de detalhe), semieixo com coifas e, na frente, a barra de direção que vira
+  com a roda. O **Tanque** tem eixo rígido de jipe (tubo de roda a roda que inclina, diferencial no meio,
+  braços puxados, cardã). Tudo segue a mola da física (roda no ar fica pendurada; batida aperta a mola).
+  São tubos num MultiMesh por material: 3 desenhos por carro. A mola é feita no tamanho de parado e o
+  carro só muda o passo (o fio não engrossa).
+- **Embaixo do carro** (`ModeloCarro.montar_chassi`): longarinas, travessas, diferenciais, caixa de
+  direção, câmbio, tanque e escapamento até a turbina. Os braços fixos da Flecha saíram (agora mexem).
+- **Boost como fluido:** antes as partículas não herdavam a velocidade do carro e as chamas eram cones
+  compridos presos no bocal — parecia uma corda amarrada atrás do carro. Agora o `boost.gd` tem a sua
+  própria simulação (camadas num MultiMesh no mundo): cada pedaço sai com a velocidade do carro + a do
+  jato, o ar freia (arrasto), gás quente sobe, faísca cai, turbulência espalha, cresce e esfria com a
+  idade; sai espalhado pelo caminho que o bocal fez no quadro. Resultado: o rastro fica no ar e **curva**
+  quando o carro curva. Do bocal só sai um miolo curtinho. Fotos andando: `testes/fotos_boost_andando.gd`.
+- `fotos_carro.sh PASTA MODELO AEROFÓLIO baixo`: fotos por baixo, com cada roda numa altura. O script de
+  fotos agora devolve a personalização salva no fim (trocar o modelo pra foto salvava por cima).
+
 ## 31/10/2026 (tarde): Personalização, etapa 2 — boost de verdade
 - O boost virou uma peça própria (`scripts/boost.gd`, `carro.chama`) presa no escapamento de cada modelo.
 - 7 estilos, cada um com a cor escolhida (12 cores): **Fogo** (3 cones de chama encaixados que tremem —

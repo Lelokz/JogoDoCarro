@@ -8,7 +8,7 @@ extends Control
 # Tela de carregamento: monta a arena escondida e mostra ela aos poucos (céu, coisas sólidas, vidro,
 # rastro do boost, resto), um pedaço por quadro. A placa de vídeo compila os shaders de cada pedaço
 # e a barra anda entre um e outro. (No navegador, compilar tudo de uma vez travava 10 a 20 s.)
-# Quando termina, essa mesma arena vira o fundo do menu: o carro girando no meio do campo.
+# Quando termina, essa mesma arena vira o fundo do menu: o carro parado no meio do campo.
 
 const ULTIMO_ENDERECO := "user://ultimo_endereco.txt"
 const ETAPAS := ["Carregando a arena", "Preparando o céu", "Preparando o chão e os carros", "Preparando o vidro", "Preparando o boost", "Preparando o resto", "Pronto"]
@@ -17,6 +17,7 @@ const LARANJA := Color(1.0, 0.5, 0.12)
 const ONDE_CARRO := Vector3(0.0, 0.0, 3.0)
 const CAMERA := Vector3(1.0, 0.85, 6.1)
 const OLHAR := Vector3(-1.05, 0.42, 2.7)
+const GIRO_CARRO := -1.5   # no menu o carro fica parado, meio de perfil, com a frente pra direita da tela
 # Personalizar: o carro sobe num pódio, para de girar de frente pra câmera e a câmera passa a
 # rodar em volta dele (cada aba manda ela pra um lado; arrastando o mouse gira, a rodinha aproxima)
 const ALTURA_PODIO := 0.2
@@ -302,7 +303,7 @@ func _process(delta: float) -> void:
 			mostrar_pedaco(func(no: Node) -> bool: return usa_shader(no, Materiais.TRANSPARENTE))
 		3:
 			arena.get_node("Carro").boostando = true
-			mostrar_pedaco(func(no: Node) -> bool: return no is CPUParticles3D)
+			mostrar_pedaco(func(no: Node) -> bool: return no is CPUParticles3D or no is MultiMeshInstance3D)
 		4:
 			mostrar_pedaco(func(_no: Node) -> bool: return true)
 			for camada in arena.find_children("*", "CanvasLayer", true, false):
@@ -361,8 +362,8 @@ func girar_carro() -> void:
 	if carro == null or not is_instance_valid(carro) or carro.process_mode != Node.PROCESS_MODE_DISABLED:
 		return
 	var p := smoothstep(0.0, 1.0, no_podio)
-	# no Personalizar o carro para de frente pra câmera (é ela que roda em volta)
-	var giro := lerp_angle(tempo * 0.4 + 2.2, PI, p)
+	# no Personalizar o carro vira de frente pra câmera (é ela que roda em volta)
+	var giro := lerp_angle(GIRO_CARRO, PI, p)
 	carro.global_transform = Transform3D(Basis(Vector3.UP, giro), ONDE_CARRO + Vector3.UP * (altura_carro + ALTURA_PODIO * p))
 	# o pódio sobe do chão; a bola sai da frente
 	podio.visible = p > 0.0

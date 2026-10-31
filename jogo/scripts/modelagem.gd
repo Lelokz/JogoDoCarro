@@ -158,3 +158,13 @@ static func espelhar(perfil: Array) -> Array:
 	for p in perfil:
 		outro.push_front(Vector2(p.x, -p.y))
 	return outro
+
+
+static func tubo(st: SurfaceTool, de: Vector3, ate: Vector3, raio: float, lados := 10) -> void:
+	# cano reto de "de" até "ate", com as pontas fechadas
+	var u := (ate - de).normalized()
+	var ref := Vector3.UP if absf(u.y) < 0.9 else Vector3.BACK
+	var x := u.cross(ref).normalized()
+	var comprimento := de.distance_to(ate)
+	var perfil := [Vector2(0, 0), Vector2(raio, 0), Vector2(raio, 0), Vector2(raio, comprimento), Vector2(raio, comprimento), Vector2(0, comprimento)]
+	torno(st, perfil, lados, Transform3D(Basis(x, u, x.cross(u)), de))

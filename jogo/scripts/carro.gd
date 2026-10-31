@@ -95,6 +95,7 @@ var direcao_mortal := Vector2.ZERO
 var tempo_desvirando := 0.0
 var eixo_desvirar := Vector3.ZERO
 var chama := Boost.new()   # o efeito do boost, no escapamento (estilo e cor do Personalizar)
+var suspensao := Suspensao.new()   # braços, molas e semieixos desenhados (seguem as rodas)
 var teleportou := true   # quadro depois de um teleporte (e de nascer): a mola mudar de uma vez não conta como pancada
 var explodido := false   # demolido: some por uns segundos e volta perto do próprio gol
 var tinta := ModeloCarro.pintura(Color(0.2, 0.45, 0.95))   # cada carro tem a sua (cor do time)
@@ -115,6 +116,7 @@ func _ready() -> void:
 	for enfeite in [teto, antena, aerofolio]:
 		$Corpo.add_child(enfeite)
 	add_child(chama)
+	add_child(suspensao)
 	vestir(aparencia)
 	# pra partida saber em quem o carro bateu (demolição)
 	contact_monitor = true
@@ -470,6 +472,8 @@ func vestir(escolha: Dictionary) -> void:
 		pneu.mesh = ModeloCarro.roda(aparencia.modelo, i >= 2)
 		usar_materiais(pneu)
 	chama.position = d.turbina
+	suspensao.montar(aparencia.modelo, lugares, detalhe, ModeloCarro.ALTURA_RODA - (curso_mola - ModeloCarro.COMPRESSAO_PARADO))
+	atualizar_rodas_desenhadas(0.0)
 	$Corpo.mesh = ModeloCarro.corpo(aparencia.modelo, aparencia.aerofolio > 0)
 	usar_materiais($Corpo)
 	teto.mesh = ModeloCarro.enfeite(2 if aparencia.teto > 0 else 0)
@@ -558,6 +562,7 @@ func atualizar_rodas_desenhadas(delta: float) -> void:
 	var v_frente := velocidade().dot(-global_basis.z)
 	giro_pneu -= v_frente / raio_roda * delta
 	var angulo := -comandos.direcao * angulo_visual_roda
+	var centros := []
 	for i in 4:
 		var pneu: Node3D = rodas[i].get_node("Pneu")
 		var distancia := maxf(curso_mola - compressao[i], 0.0)
@@ -566,3 +571,5 @@ func atualizar_rodas_desenhadas(delta: float) -> void:
 		if i < 2:
 			b = Basis(Vector3.UP, angulo) * b
 		pneu.basis = b
+		centros.append(rodas[i].position + pneu.position)
+	suspensao.atualizar(centros, angulo)

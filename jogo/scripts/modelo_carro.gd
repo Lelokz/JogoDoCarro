@@ -15,11 +15,14 @@ class Pecas:
 	var lanterna := Modelagem.nova()
 	var fogo := Modelagem.nova()
 	var detalhe := Modelagem.nova()
+	var chassi := Modelagem.nova()
 	var usou_detalhe := false
 
 
 # física de cada um: caixa de batida (largura, altura, comprimento), centro da caixa,
-# rodas (x pra fora, z da frente, z de trás); a altura da roda é a mesma em todos
+# rodas (x pra fora, z da frente, z de trás); a altura da roda é a mesma em todos.
+# suspensao: tipo (bandeja ou eixo rígido), meia largura do chassi (onde os braços prendem)
+# e a altura do assoalho (embaixo da lataria)
 const MODELOS := [
 	{
 		"nome": "Raio",
@@ -30,6 +33,7 @@ const MODELOS := [
 		"teto": Vector3(0.0, 0.185, 0.14),        # onde fica o chapéu
 		"traseira": Vector3(0.0, 0.115, 0.55),    # tampa de trás (antena e aerofólio)
 		"roda": {"largura": 0.11, "aro": 0.135, "raios": 10, "fino": true},
+		"suspensao": {"tipo": "bandeja", "chassi": 0.16, "assoalho": -0.185},
 	},
 	{
 		"nome": "Tanque",
@@ -40,6 +44,7 @@ const MODELOS := [
 		"teto": Vector3(0.0, 0.37, 0.15),
 		"traseira": Vector3(0.0, 0.135, 0.63),
 		"roda": {"largura": 0.15, "aro": 0.1, "raios": 6, "cravos": true},
+		"suspensao": {"tipo": "eixo", "chassi": 0.2, "assoalho": -0.165},
 	},
 	{
 		"nome": "Besouro",
@@ -50,6 +55,7 @@ const MODELOS := [
 		"teto": Vector3(0.0, 0.33, 0.12),
 		"traseira": Vector3(0.0, 0.15, 0.55),
 		"roda": {"largura": 0.12, "aro": 0.112, "raios": 0, "calota": true, "faixa_branca": true},
+		"suspensao": {"tipo": "bandeja", "chassi": 0.16, "assoalho": -0.16},
 	},
 	{
 		"nome": "Flecha",
@@ -61,6 +67,7 @@ const MODELOS := [
 		"traseira": Vector3(0.0, 0.0, 0.4),
 		"roda": {"largura": 0.1, "aro": 0.13, "raios": 5},
 		"roda_tras": {"largura": 0.17, "aro": 0.13, "raios": 5},
+		"suspensao": {"tipo": "bandeja", "chassi": 0.13, "assoalho": -0.13},
 	},
 ]
 const ALTURA_RODA := -0.08
@@ -140,6 +147,7 @@ static func montar_corpo(modelo: int, com_aerofolio := false) -> ArrayMesh:
 			montar_besouro(p)
 		"Flecha":
 			montar_flecha(p, not com_aerofolio)
+	montar_chassi(p, MODELOS[modelo])
 	# turbina do boost (o rastro sai dali)
 	var t: Vector3 = MODELOS[modelo].turbina
 	var deitado := Transform3D(Basis(Vector3.RIGHT, PI / 2.0), t + Vector3(0, 0, -0.06))
@@ -153,6 +161,7 @@ static func montar_corpo(modelo: int, com_aerofolio := false) -> ArrayMesh:
 	Modelagem.adicionar(malha, p.farol, "farol", Materiais.liso(Color.WHITE, 0.3, Color(0.85, 0.93, 1.0), 4.0))
 	Modelagem.adicionar(malha, p.lanterna, "lanterna", Materiais.liso(Color(1.0, 0.1, 0.1), 0.3, Color(1.0, 0.06, 0.04), 3.5))
 	Modelagem.adicionar(malha, p.fogo, "turbina", turbina())
+	Modelagem.adicionar(malha, p.chassi, "chassi", Materiais.liso(Color(0.2, 0.2, 0.22), 0.45, Color.BLACK, 0.0, 0.65))
 	if p.usou_detalhe:
 		Modelagem.adicionar(malha, p.detalhe, "detalhe", Materiais.liso(Color(0.78, 0.8, 0.84), 0.22, Color.BLACK, 0.0, 0.9))
 	return malha
@@ -531,17 +540,38 @@ static func montar_flecha(p: Pecas, asa_de_fabrica := true) -> void:
 	for x in [-0.22, -0.13, -0.05, 0.05, 0.13, 0.22]:
 		Modelagem.caixa(p.escuro, Vector3(x, -0.105, 0.64), Vector3(0.008, 0.06, 0.1), Basis(Vector3.RIGHT, deg_to_rad(-15.0)))
 	Modelagem.caixa(p.escuro, Vector3(0.0, -0.08, 0.66), Vector3(0.5, 0.01, 0.06), Basis(Vector3.RIGHT, deg_to_rad(-15.0)))
-	# braços da suspensão: do corpo até o meio de cada roda (em cima e embaixo, em V)
-	for z in [d.rodas.y, d.rodas.z]:
+
+
+# ---------------------------------------------------------------- chassi
+# Embaixo da lataria: longarinas, travessas, diferenciais, caixa de direção, câmbio, tanque e
+# escapamento até a turbina. Os braços, molas e semieixos que se mexem são da Suspensao.
+
+static func montar_chassi(p: Pecas, d: Dictionary) -> void:
+	var c: float = d.suspensao.chassi
+	var a: float = d.suspensao.assoalho
+	var zf: float = d.rodas.y
+	var zt: float = d.rodas.z
+	var roda_y := ALTURA_RODA - (0.12 - COMPRESSAO_PARADO)   # centro da roda parada (curso da mola 0,12)
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(p.chassi, Vector3(lado * (c - 0.03), a - 0.012, (zf + zt) / 2.0), Vector3(0.035, 0.03, zt - zf + 0.22))
+	for z in [zf, 0.0, zt]:
+		Modelagem.caixa(p.chassi, Vector3(0.0, a - 0.014, z), Vector3(2.0 * c, 0.028, 0.06))
+	if d.suspensao.tipo == "bandeja":
+		# diferencial em cada eixo (os semieixos saem dele) e a caixa de direção na frente
+		for z in [zf, zt]:
+			Modelagem.caixa(p.chassi, Vector3(0.0, roda_y - 0.005, z), Vector3(2.0 * (c - 0.04), 0.085, 0.11))
+			Modelagem.torno(p.chassi, [Vector2(0.0, 0.0), Vector2(0.045, 0.0), Vector2(0.045, 0.0), Vector2(0.045, 0.02), Vector2(0.03, 0.035), Vector2(0.0, 0.035)], 14, Transform3D(Basis(Vector3.RIGHT, PI / 2.0 * signf(z)), Vector3(0.0, roda_y - 0.005, z + signf(z) * 0.055)))
+		Modelagem.tubo(p.chassi, Vector3(-(c - 0.02), roda_y - 0.015, zf + 0.075), Vector3(c - 0.02, roda_y - 0.015, zf + 0.075), 0.016)
 		for lado in [-1.0, 1.0]:
-			var corpo_x := Lataria.valor(FLECHA_CORPO.largura, z) * 0.9
-			var roda_x: float = d.rodas.x - 0.05
-			for y in [[-0.09, -0.13], [-0.01, -0.1]]:
-				for dz in [-0.05, 0.05]:
-					var de := Vector3(corpo_x * lado, y[0], z + dz)
-					var ate := Vector3(roda_x * lado, y[1], z)
-					var meio := (de + ate) / 2.0
-					Modelagem.caixa(p.escuro, meio, Vector3(0.01, 0.01, de.distance_to(ate)), Basis.looking_at(ate - de, Vector3.UP))
+			Modelagem.tubo(p.chassi, Vector3(lado * (c - 0.08), roda_y - 0.015, zf + 0.075), Vector3(lado * (c - 0.02), roda_y - 0.015, zf + 0.075), 0.022)
+	# câmbio no meio, tanque do lado e o escapamento correndo por baixo até a turbina
+	Modelagem.caixa(p.chassi, Vector3(0.0, a - 0.03, -0.05), Vector3(0.11, 0.05, 0.26))
+	Modelagem.caixa(p.chassi, Vector3(-0.07, a - 0.026, zt - 0.2), Vector3(0.14, 0.04, 0.15))
+	var t: Vector3 = d.turbina
+	var escape := [Vector3(0.06, a - 0.04, -0.15), Vector3(0.06, a - 0.04, 0.05), Vector3(0.06, a - 0.04, zt - 0.08), Vector3(0.0, t.y - 0.01, t.z - 0.12)]
+	for k in escape.size() - 1:
+		Modelagem.tubo(p.chassi, escape[k], escape[k + 1], 0.016)
+	Modelagem.tubo(p.chassi, Vector3(0.06, a - 0.04, 0.05), Vector3(0.06, a - 0.04, 0.2), 0.034)
 
 
 # ---------------------------------------------------------------- rodas
