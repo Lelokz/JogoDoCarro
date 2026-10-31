@@ -23,6 +23,8 @@ var material_vidro: ShaderMaterial
 
 
 func _ready() -> void:
+	Opcoes.aplicar_graficos(self)
+	Opcoes.mudou.connect(aplicar_graficos)
 	material = Materiais.gramado(COMPRIMENTO / 2.0, LARGURA / 2.0, GOL_LARGURA / 2.0)
 	material_vidro = Materiais.vidro(ALTURA)
 	criar_chao_de_fora()
@@ -36,6 +38,10 @@ func _ready() -> void:
 	criar_paredes()
 	criar_gol(-1.0, COR_LARANJA)
 	criar_gol(1.0, COR_AZUL)
+
+
+func aplicar_graficos() -> void:
+	Opcoes.aplicar_graficos(self)
 
 
 func perimetro() -> Array:

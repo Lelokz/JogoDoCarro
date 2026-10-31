@@ -14,11 +14,14 @@ boot_splash/show_image=false
 
 Controles="*res://scripts/controles.gd"
 Rede="*res://scripts/rede.gd"
+Opcoes="*res://scripts/opcoes.gd"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [physics]
 

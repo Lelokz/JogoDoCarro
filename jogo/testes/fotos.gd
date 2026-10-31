@@ -1,7 +1,7 @@
 extends SceneTree
 
 # Fotos do visual sem abrir janela na tela (rodar com xvfb-run): ./tirar_fotos.sh PASTA
-# Cada foto: [nome, posição da câmera, pra onde olha] (null = câmera do jogo).
+# Cada foto: [nome, posição da câmera, pra onde olha] (null = câmera do jogo; "pausa"/"opcoes" = abre a tela).
 # Nas fotos "carro_" as posições são em volta do carro (a frente dele é o -Z).
 
 const FOTOS := [
@@ -13,6 +13,8 @@ const FOTOS := [
 	["5_geral", Vector3(34, 17, 62), Vector3(0, 0, 0)],
 	["6_gol", Vector3(9, 4, 30), Vector3(0, 3, 50)],
 	["7_arquibancada", Vector3(-10, 3, 5), Vector3(40, 14, 20)],
+	["8_pausa", "pausa", null],
+	["9_opcoes", "opcoes", null],
 ]
 
 var pasta := ""
@@ -38,7 +40,16 @@ func _process(_delta: float) -> bool:
 	if foto == FOTOS.size():
 		return true
 	var f: Array = FOTOS[foto]
-	if f[1] == null:
+	if f[1] is String:
+		root.get_node("Arena/Camera").make_current()
+		if f[1] == "pausa":
+			# carregado na hora: scripts -s não enxergam os autoloads que a Pausa usa na compilação
+			var pausa: Node = load("res://scripts/pausa.gd").new()
+			pausa.name = "Pausa"
+			root.get_node("Arena").add_child(pausa)
+		else:
+			root.get_node("Arena/Pausa").abrir_opcoes()
+	elif f[1] == null:
 		root.get_node("Arena/Camera").make_current()
 	elif f[0].contains("carro_"):
 		var carro: Node3D = root.get_node("Arena/Carro")

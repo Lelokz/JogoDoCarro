@@ -17,6 +17,16 @@ var desviradas := 0
 
 
 func ler_teclado() -> void:
+	if Controles.pausado:
+		# telinha do ESC aberta: solta tudo (os contadores ficam como estão)
+		acelerador = 0.0
+		direcao = 0.0
+		inclinar = 0.0
+		rolar = 0.0
+		pulo = false
+		boost = false
+		freio_mao = false
+		return
 	acelerador = Input.get_axis("re", "acelerar")
 	direcao = Input.get_axis("esquerda", "direita")
 	inclinar = Input.get_axis("nariz_cima", "nariz_baixo")

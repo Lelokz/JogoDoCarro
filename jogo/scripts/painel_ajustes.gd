@@ -52,9 +52,6 @@ const AJUSTES := [
 	["bola", "linear_damp", "Resistência do ar da bola", 0.0, 1.0, 0.01],
 	["bola", "velocidade_maxima", "Velocidade máxima da bola (m/s)", 10.0, 150.0, 1.0],
 	["titulo", "Câmera"],
-	["camera", "distancia", "Distância (m)", 1.5, 6.0, 0.1],
-	["camera", "altura", "Altura (m)", 0.3, 3.0, 0.05],
-	["camera", "fov", "FOV (graus)", 60.0, 120.0, 1.0],
 	["camera", "suavidade", "Suavidade do giro", 1.0, 30.0, 0.5],
 ]
 

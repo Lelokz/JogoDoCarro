@@ -20,6 +20,8 @@ var material_grade: ShaderMaterial
 
 
 func _ready() -> void:
+	Opcoes.aplicar_graficos(self)
+	Opcoes.mudou.connect(aplicar_graficos)
 	material_grade = Materiais.grade()
 	# ainda não tem os pads de boost (etapa 5): aqui o tanque enche sozinho
 	$Carro.recarga_boost = 20.0
@@ -48,3 +50,7 @@ func criar_bloco(posicao: Vector3, tamanho: Vector3, base: Basis) -> void:
 	corpo.add_child(forma)
 	corpo.add_child(desenho)
 	add_child(corpo)
+
+
+func aplicar_graficos() -> void:
+	Opcoes.aplicar_graficos(self)

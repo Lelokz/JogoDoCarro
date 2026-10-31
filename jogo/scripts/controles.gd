@@ -2,6 +2,8 @@ extends Node
 
 # Teclado e controle. Os botões do controle seguem o padrão Xbox.
 
+var pausado := false   # telinha do ESC aberta: o carro de quem joga aqui fica solto
+
 func _ready() -> void:
 	adicionar("acelerar", [KEY_W, KEY_UP], [], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]])
 	adicionar("re", [KEY_S, KEY_DOWN], [], [[JOY_AXIS_TRIGGER_LEFT, 1.0]])
@@ -52,13 +54,11 @@ func adicionar(nome: String, teclas: Array, botoes: Array, eixos: Array, mouse: 
 func _unhandled_input(evento: InputEvent) -> void:
 	var cena := get_tree().current_scene
 	var jogando := cena != null and not cena.scene_file_path.ends_with("menu.tscn")
-	if evento.is_action_pressed("menu") and jogando:
-		Rede.sair()
-	if evento.is_action_pressed("trocar_mapa") and jogando and not Rede.online():
+	if evento.is_action_pressed("menu") and jogando and not pausado:
+		get_viewport().set_input_as_handled()
+		cena.add_child(Pausa.new())
+	if evento.is_action_pressed("trocar_mapa") and jogando and not Rede.online() and not pausado:
 		var na_arena := get_tree().current_scene.scene_file_path.ends_with("arena.tscn")
 		get_tree().change_scene_to_file("res://cenas/campo_teste.tscn" if na_arena else "res://cenas/arena.tscn")
 	if evento.is_action_pressed("tela_cheia"):
-		if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		else:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		Opcoes.definir("tela_cheia", not Opcoes.tela_cheia_agora())

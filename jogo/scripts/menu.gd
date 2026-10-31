@@ -74,6 +74,7 @@ func _ready() -> void:
 
 	caixa.add_child(botao("Treinar sozinho", func() -> void: Rede.treinar()))
 	caixa.add_child(botao("Campo de teste", func() -> void: Rede.treinar("res://cenas/campo_teste.tscn")))
+	caixa.add_child(botao("Opções", func() -> void: add_child(TelaOpcoes.new())))
 	caixa.add_child(HSeparator.new())
 	if OS.has_feature("web"):
 		caixa.add_child(botao("Criar sala (jogar com amigos)", criar_sala))

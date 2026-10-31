@@ -2,8 +2,7 @@ extends Camera3D
 
 @export var alvo_caminho: NodePath
 @export var bola_caminho: NodePath
-@export var distancia := 2.8
-@export var altura := 1.1
+# distância, altura e campo de visão vêm das Opções de cada jogador
 @export var suavidade := 8.0   # só o giro da câmera é suave; a distância fica sempre igual
 
 var alvo: Node3D
@@ -21,6 +20,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	fov = Opcoes.pegar("fov")
+	var distancia: float = Opcoes.pegar("distancia")
+	var altura: float = Opcoes.pegar("altura")
 	if Input.is_action_just_pressed("camera_bola") and bola:
 		camera_bola = not camera_bola
 	var t := alvo.get_global_transform_interpolated()
