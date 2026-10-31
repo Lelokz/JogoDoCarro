@@ -25,6 +25,9 @@ Diário do projeto. O mais novo fica em cima.
   faróis redondos, quebra-mato, snorkel, estribo, bagageiro com barra de luz, estepe atrás da cabine, pneu
   de trilha largo com cravos. Caixa 0,80 × 0,46 × 1,24 m (a mais alta).
 - Teste novo `teste_modelos.gd` (no `testar.sh`): cada carro anda, curva, pula e dá mortal (todos iguais).
+- **Besouro** (3º): tudo redondo, para-lamas bojudos com os faróis em cima dos da frente (tipo fusca),
+  estribo, cabine em domo, friso cromado no capô, grelha do motor, para-choques com garras, rodas com
+  calota cromada e faixa branca. Caixa 0,82 × 0,38 × 1,24 m.
 - **Explosão do gol consertada** (ele viu ela no meio do estádio e o carro mal voando):
   - As partículas eram soltas antes de a explosão ir pro lugar e ficam no mundo → saíam do ponto zero (meio
     do campo). Agora vão pro lugar e só depois disparam. A foto de teste agora é no gol (antes era no meio,

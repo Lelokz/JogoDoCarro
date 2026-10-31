@@ -41,6 +41,16 @@ const MODELOS := [
 		"traseira": Vector3(0.0, 0.135, 0.63),
 		"roda": {"largura": 0.15, "aro": 0.1, "raios": 6, "cravos": true},
 	},
+	{
+		"nome": "Besouro",
+		"caixa": Vector3(0.82, 0.38, 1.24),
+		"centro": Vector3(0.0, 0.03, 0.0),
+		"rodas": Vector3(0.39, -0.43, 0.43),
+		"turbina": Vector3(0.0, -0.065, 0.655),
+		"teto": Vector3(0.0, 0.33, 0.12),
+		"traseira": Vector3(0.0, 0.15, 0.55),
+		"roda": {"largura": 0.12, "aro": 0.112, "raios": 0, "calota": true, "faixa_branca": true},
+	},
 ]
 const ALTURA_RODA := -0.08
 const ARCO_Y := -0.13     # centro dos arcos das rodas (a roda parada fica uns 6,5 cm abaixo do ponto da mola)
@@ -109,6 +119,8 @@ static func montar_corpo(modelo: int) -> ArrayMesh:
 			montar_raio(p)
 		"Tanque":
 			montar_tanque(p)
+		"Besouro":
+			montar_besouro(p)
 	# turbina do boost (o rastro sai dali)
 	var t: Vector3 = MODELOS[modelo].turbina
 	var deitado := Transform3D(Basis(Vector3.RIGHT, PI / 2.0), t + Vector3(0, 0, -0.06))
@@ -338,6 +350,92 @@ static func montar_tanque(p: Pecas) -> void:
 		Modelagem.caixa(p.escuro, Vector3(x, 0.139, -0.42), Vector3(0.1, 0.008, 0.12))
 
 
+# ---------------------------------------------------------------- Besouro
+# Tudo redondo: corpo gordinho, para-lamas bojudos separados (os faróis redondos ficam em cima dos da
+# frente, tipo fusca), estribo ligando os para-lamas, cabine em domo, friso cromado no capô, grelha do
+# motor atrás, para-choques cromados com garras. Rodas pequenas com calota e faixa branca.
+
+const BESOURO_CORPO := {
+	"topo": [[-0.645, -0.05], [-0.6, 0.04], [-0.5, 0.095], [-0.3, 0.135], [-0.2, 0.15], [0.3, 0.16], [0.48, 0.13], [0.6, 0.06], [0.645, -0.02]],
+	"fundo": [[-0.645, -0.1], [-0.58, -0.16], [0.58, -0.16], [0.645, -0.1]],
+	"cintura": [[-0.645, -0.06], [0.0, 0.0], [0.645, -0.04]],
+	"largura": [[-0.645, 0.16], [-0.58, 0.25], [-0.45, 0.3], [0.0, 0.335], [0.45, 0.31], [0.6, 0.25], [0.645, 0.15]],
+	"ombro": [[-0.645, 0.8], [0.645, 0.8]],
+	"forma": [[-0.645, 2.4], [0.645, 2.4]],
+}
+const BESOURO_PARALAMA_FRENTE := {
+	"x": 0.37,
+	"topo": [[-0.685, -0.06], [-0.63, 0.05], [-0.52, 0.12], [-0.4, 0.13], [-0.27, 0.09], [-0.17, -0.01]],
+	"fundo": [[-0.685, -0.08], [-0.17, -0.09]],
+	"cintura": [[-0.685, -0.02], [-0.17, -0.04]],
+	"largura": [[-0.685, 0.04], [-0.62, 0.1], [-0.45, 0.118], [-0.3, 0.11], [-0.17, 0.05]],
+	"ombro": [[-0.685, 0.75], [-0.17, 0.75]],
+	"forma": [[-0.685, 2.2], [-0.17, 2.2]],
+}
+const BESOURO_PARALAMA_TRAS := {
+	"x": 0.375,
+	"topo": [[0.17, -0.01], [0.27, 0.1], [0.42, 0.14], [0.56, 0.12], [0.66, 0.05], [0.70, -0.05]],
+	"fundo": [[0.17, -0.09], [0.70, -0.08]],
+	"cintura": [[0.17, -0.04], [0.70, -0.02]],
+	"largura": [[0.17, 0.05], [0.3, 0.115], [0.5, 0.12], [0.64, 0.1], [0.70, 0.04]],
+	"ombro": [[0.17, 0.75], [0.70, 0.75]],
+	"forma": [[0.17, 2.2], [0.70, 2.2]],
+}
+const BESOURO_CABINE := {
+	"topo": [[-0.25, 0.13], [-0.13, 0.26], [0.0, 0.315], [0.12, 0.33], [0.25, 0.32], [0.36, 0.27], [0.45, 0.15]],
+	"fundo": [[-0.25, 0.08], [0.45, 0.08]],
+	"cintura": [[-0.25, 0.15], [0.45, 0.15]],
+	"largura": [[-0.25, 0.27], [0.1, 0.29], [0.45, 0.26]],
+	"ombro": [[-0.25, 0.68], [0.45, 0.68]],
+	"forma": [[-0.25, 2.3], [0.45, 2.3]],
+}
+
+
+static func montar_besouro(p: Pecas) -> void:
+	var d := MODELOS[2] as Dictionary
+	var arcos_ := arcos(d, 0.205)
+	lataria(p, BESOURO_CORPO, arcos_)
+	lataria(p, BESOURO_PARALAMA_FRENTE, arcos_, true)
+	lataria(p, BESOURO_PARALAMA_TRAS, arcos_, true)
+	cabine(p, BESOURO_CABINE, 0.82, [[0.04, 0.1], [0.34, 0.46]])
+	p.usou_detalhe = true
+	var de_frente := Basis(Vector3.RIGHT, -PI / 2.0 + deg_to_rad(20.0))
+	var de_tras := Basis(Vector3.RIGHT, PI / 2.0)
+	for lado in [-1.0, 1.0]:
+		# farol redondo em cima do para-lama da frente, com aro cromado
+		var onde := Vector3(0.37 * lado, 0.045, -0.625)
+		Modelagem.torno(p.farol, meia_bola(0.052), 18, Transform3D(de_frente.scaled(Vector3(1, 1, 0.45)), onde))
+		Modelagem.torno(p.detalhe, [Vector2(0.064, -0.006), Vector2(0.064, 0.01), Vector2(0.052, 0.016)], 18, Transform3D(de_frente, onde))
+		# lanterna redonda no fim do para-lama de trás
+		Modelagem.torno(p.lanterna, meia_bola(0.034), 14, Transform3D(de_tras.scaled(Vector3(1, 1, 0.45)), Vector3(0.375 * lado, 0.03, 0.678)))
+		# estribo do para-lama da frente até o de trás
+		Modelagem.caixa(p.escuro, Vector3(0.36 * lado, -0.1, 0.0), Vector3(0.11, 0.022, 0.38))
+		Modelagem.caixa(p.detalhe, Vector3(0.414 * lado, -0.1, 0.0), Vector3(0.006, 0.026, 0.38))
+		# garras dos para-choques
+		for z in [-0.668, 0.672]:
+			Modelagem.caixa(p.detalhe, Vector3(0.17 * lado, -0.07, z), Vector3(0.025, 0.08, 0.03))
+		# maçaneta e retrovisor redondinho
+		Modelagem.caixa(p.detalhe, Vector3(0.33 * lado, 0.1, 0.08), Vector3(0.012, 0.012, 0.05))
+		Modelagem.torno(p.detalhe, meia_bola(0.022), 10, Transform3D(Basis(), Vector3(0.31 * lado, 0.19, -0.2)))
+	# para-choques cromados
+	Modelagem.caixa(p.detalhe, Vector3(0.0, -0.095, -0.665), Vector3(0.7, 0.028, 0.03))
+	Modelagem.caixa(p.detalhe, Vector3(0.0, -0.095, 0.67), Vector3(0.7, 0.028, 0.03))
+	# friso cromado no meio do capô, seguindo a curva
+	for k in 8:
+		var z0 := -0.6 + 0.05 * k
+		var z1 := z0 + 0.05
+		var y0 := Lataria.valor(BESOURO_CORPO.topo, z0)
+		var y1 := Lataria.valor(BESOURO_CORPO.topo, z1)
+		var inclinacao := atan2(y1 - y0, z1 - z0)
+		Modelagem.caixa(p.detalhe, Vector3(0.0, (y0 + y1) / 2.0 + 0.004, (z0 + z1) / 2.0), Vector3(0.018, 0.008, 0.052), Basis(Vector3.RIGHT, -inclinacao))
+	# grelha do motor na tampa de trás
+	for k in 5:
+		var z := 0.47 + 0.028 * k
+		var y := Lataria.valor(BESOURO_CORPO.topo, z)
+		var inclinacao := atan2(Lataria.valor(BESOURO_CORPO.topo, z + 0.01) - y, 0.01)
+		Modelagem.caixa(p.escuro, Vector3(0.0, y + 0.003, z), Vector3(0.22, 0.008, 0.012), Basis(Vector3.RIGHT, -inclinacao))
+
+
 # ---------------------------------------------------------------- rodas
 
 static func montar_roda(r: Dictionary) -> ArrayMesh:
@@ -361,6 +459,16 @@ static func montar_roda(r: Dictionary) -> ArrayMesh:
 	Modelagem.torno(fundo, Modelagem.espelhar(prato), 32)
 	var n: int = r.raios
 	var comprimento := a - 0.04
+	var faixa := Modelagem.nova()
+	if r.get("calota", false):
+		# calota cromada abaulada nos dois lados
+		var calota := [Vector2(a - 0.012, w - 0.006), Vector2(a * 0.7, w + 0.008), Vector2(a * 0.3, w + 0.016), Vector2(0.0, w + 0.018)]
+		Modelagem.torno(aro, calota, 32)
+		Modelagem.torno(aro, Modelagem.espelhar(calota), 32)
+	if r.get("faixa_branca", false):
+		var branca := [Vector2(a + 0.012, w + 0.001), Vector2(a + 0.036, w + 0.001)]
+		Modelagem.torno(faixa, branca, 32)
+		Modelagem.torno(faixa, Modelagem.espelhar(branca), 32)
 	for lado in [-1.0, 1.0]:
 		for k in n:
 			var giro := Basis(Vector3.UP, TAU * k / n)
@@ -377,6 +485,8 @@ static func montar_roda(r: Dictionary) -> ArrayMesh:
 	Modelagem.adicionar(malha, borracha, "pneu", Materiais.liso(Color(0.045, 0.045, 0.05), 0.85))
 	Modelagem.adicionar(malha, aro, "aro", Materiais.liso(Color(0.78, 0.8, 0.84), 0.22, Color.BLACK, 0.0, 0.9))
 	Modelagem.adicionar(malha, fundo, "fundo do aro", Materiais.liso(Color(0.06, 0.065, 0.07), 0.4, Color.BLACK, 0.0, 0.6))
+	if r.get("faixa_branca", false):
+		Modelagem.adicionar(malha, faixa, "faixa branca", Materiais.liso(Color(0.92, 0.92, 0.9), 0.6))
 	return malha
 
 

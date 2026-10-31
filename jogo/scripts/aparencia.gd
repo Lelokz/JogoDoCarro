@@ -8,8 +8,8 @@ extends RefCounted
 # É só aparência: todos os carros têm a mesma física e a mesma caixa de batida.
 
 const ARQUIVO := "user://personalizacao.json"   # (o carro.json é do painel F1 no site)
-const MODELOS := ["Raio", "Tanque"]
-const SOBRE_MODELOS := ["Superesportivo em cunha: comprido, baixo e estreito", "Jipe de trilha: alto, quadradão e parrudo"]
+const MODELOS := ["Raio", "Tanque", "Besouro"]
+const SOBRE_MODELOS := ["Superesportivo em cunha: comprido, baixo e estreito", "Jipe de trilha: alto, quadradão e parrudo", "Bolinha retrô: tudo redondo, faróis nos para-lamas"]
 const DETALHES := [
 	["Nenhum", Color(0.78, 0.8, 0.84)],
 	["Branco", Color(0.92, 0.93, 0.95)],
