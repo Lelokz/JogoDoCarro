@@ -21,6 +21,10 @@ Diário do projeto. O mais novo fica em cima.
   ombros por cima das rodas, cabine em gota, barra de luz atrás, difusor, rodas de 10 raios e pneu baixo.
   Caixa 0,80 × 0,30 × 1,315 m. Testes de física iguais; batida reta na bola um pouco mais fraca (57 × 61 km/h).
 - `./fotos_carro.sh PASTA MODELO`: folha com o carro no pódio de 6 lados (sem abrir janela).
+- **Tanque** (2º): jipe de trilha, caixa de faces retas, para-lamas quadrados saltados, grade com barras e
+  faróis redondos, quebra-mato, snorkel, estribo, bagageiro com barra de luz, estepe atrás da cabine, pneu
+  de trilha largo com cravos. Caixa 0,80 × 0,46 × 1,24 m (a mais alta).
+- Teste novo `teste_modelos.gd` (no `testar.sh`): cada carro anda, curva, pula e dá mortal (todos iguais).
 - **Achado:** os ajustes salvos no F1 (`jogo/ajustes/carro.json`) só valiam no PC; o site rodava com os
   valores originais. Agora os padrões do código são os dele: curva 1,3 (pediu mais curva: era 1,15),
   aderência 54, giro no freio de mão 1,3, força da batida da bola 0,8.

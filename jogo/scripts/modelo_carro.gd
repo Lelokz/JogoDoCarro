@@ -31,6 +31,16 @@ const MODELOS := [
 		"traseira": Vector3(0.0, 0.115, 0.55),    # tampa de trás (antena e aerofólio)
 		"roda": {"largura": 0.11, "aro": 0.135, "raios": 10, "fino": true},
 	},
+	{
+		"nome": "Tanque",
+		"caixa": Vector3(0.80, 0.46, 1.24),
+		"centro": Vector3(0.0, 0.07, 0.0),
+		"rodas": Vector3(0.40, -0.42, 0.42),
+		"turbina": Vector3(0.0, -0.05, 0.665),
+		"teto": Vector3(0.0, 0.37, 0.15),
+		"traseira": Vector3(0.0, 0.135, 0.63),
+		"roda": {"largura": 0.15, "aro": 0.1, "raios": 6, "cravos": true},
+	},
 ]
 const ALTURA_RODA := -0.08
 const ARCO_Y := -0.13     # centro dos arcos das rodas (a roda parada fica uns 6,5 cm abaixo do ponto da mola)
@@ -97,6 +107,8 @@ static func montar_corpo(modelo: int) -> ArrayMesh:
 	match MODELOS[modelo].nome:
 		"Raio":
 			montar_raio(p)
+		"Tanque":
+			montar_tanque(p)
 	# turbina do boost (o rastro sai dali)
 	var t: Vector3 = MODELOS[modelo].turbina
 	var deitado := Transform3D(Basis(Vector3.RIGHT, PI / 2.0), t + Vector3(0, 0, -0.06))
@@ -231,6 +243,101 @@ static func montar_raio(p: Pecas) -> void:
 		Modelagem.caixa(p.escuro, Vector3(x, -0.15, 0.62), Vector3(0.01, 0.07, 0.09))
 
 
+# ---------------------------------------------------------------- Tanque
+# Jipe de trilha: caixa de faces retas, capô reto, para-brisa em pé, teto chato; para-lamas quadrados
+# saltados pra fora; grade com barras e faróis redondos; para-choque de impulsão, snorkel, estribo,
+# bagageiro com barra de luz e estepe atrás da cabine. Pneu de trilha largo, com cravos.
+
+const TANQUE_CORPO := {
+	"reto": true,
+	"topo": [[-0.64, 0.07], [-0.625, 0.11], [-0.59, 0.125], [-0.25, 0.135], [0.60, 0.135], [0.64, 0.115]],
+	"fundo": [[-0.64, -0.1], [-0.6, -0.165], [0.6, -0.165], [0.64, -0.12]],
+	"cintura": [[-0.64, 0.02], [0.64, 0.04]],
+	"largura": [[-0.64, 0.34], [-0.61, 0.37], [0.61, 0.37], [0.64, 0.35]],
+	"ombro": [[-0.64, 0.96], [0.64, 0.96]],
+	"forma": [[-0.64, 8.0], [0.64, 8.0]],
+	"saia": [[-0.64, -0.105], [0.64, -0.105]],
+}
+const TANQUE_CABINE := {
+	"reto": true,
+	"topo": [[-0.27, 0.13], [-0.19, 0.345], [-0.15, 0.36], [0.49, 0.36], [0.53, 0.33]],
+	"fundo": [[-0.27, 0.08], [0.53, 0.08]],
+	"cintura": [[-0.27, 0.15], [0.53, 0.15]],
+	"largura": [[-0.27, 0.355], [0.53, 0.355]],
+	"ombro": [[-0.27, 0.9], [0.53, 0.9]],
+	"forma": [[-0.27, 10.0], [0.53, 10.0]],
+}
+
+
+static func paralama_tanque(z: float) -> Dictionary:
+	# para-lama quadrado, saltado pra fora da caixa (o arco da roda é recortado nele)
+	return {
+		"reto": true,
+		"x": 0.415,
+		"topo": [[z - 0.25, 0.03], [z - 0.21, 0.115], [z + 0.21, 0.115], [z + 0.25, 0.03]],
+		"fundo": [[z - 0.25, -0.05], [z + 0.25, -0.05]],
+		"cintura": [[z - 0.25, 0.0], [z + 0.25, 0.0]],
+		"largura": [[z - 0.25, 0.07], [z + 0.25, 0.07]],
+		"ombro": [[z - 0.25, 0.85], [z + 0.25, 0.85]],
+		"forma": [[z - 0.25, 6.0], [z + 0.25, 6.0]],
+	}
+
+
+static func montar_tanque(p: Pecas) -> void:
+	var d := MODELOS[1] as Dictionary
+	var arcos_ := arcos(d, 0.205)
+	lataria(p, TANQUE_CORPO, arcos_)
+	for z in [d.rodas.y, d.rodas.z]:
+		var flare := paralama_tanque(z)
+		for lado in [1.0, -1.0]:
+			flare["x"] = 0.415 * lado
+			Lataria.montar(flare, arcos_, func(_c: Vector3, _n: Vector3) -> SurfaceTool: return p.pinta)
+	cabine(p, TANQUE_CABINE, 0.9, [[0.02, 0.09], [0.42, 0.54]])
+	p.usou_detalhe = true
+	var de_frente := Basis(Vector3.RIGHT, -PI / 2.0)
+	# grade: fundo escuro com barras cromadas em pé, entre os faróis redondos
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.035, -0.643), Vector3(0.4, 0.13, 0.008))
+	for k in 7:
+		Modelagem.caixa(p.detalhe, Vector3(-0.15 + 0.05 * k, 0.035, -0.648), Vector3(0.018, 0.115, 0.008))
+	for lado in [-1.0, 1.0]:
+		Modelagem.torno(p.farol, meia_bola(0.046), 16, Transform3D(de_frente.scaled(Vector3(1, 1, 0.35)), Vector3(0.27 * lado, 0.045, -0.643)))
+		Modelagem.torno(p.detalhe, [Vector2(0.058, -0.004), Vector2(0.058, 0.012), Vector2(0.047, 0.014)], 16, Transform3D(de_frente, Vector3(0.27 * lado, 0.045, -0.642)))
+		# piscas e lanternas em pé atrás
+		Modelagem.caixa(p.lanterna, Vector3(0.335 * lado, 0.05, 0.643), Vector3(0.05, 0.11, 0.008))
+		# retrovisor no braço
+		Modelagem.caixa(p.escuro, Vector3(0.39 * lado, 0.2, -0.2), Vector3(0.05, 0.07, 0.02))
+		Modelagem.caixa(p.escuro, Vector3(0.365 * lado, 0.17, -0.2), Vector3(0.04, 0.012, 0.012))
+		# estribo entre as rodas
+		Modelagem.caixa(p.escuro, Vector3(0.41 * lado, -0.13, 0.0), Vector3(0.09, 0.02, 0.36))
+		# trilhos do bagageiro
+		Modelagem.caixa(p.escuro, Vector3(0.3 * lado, 0.385, 0.18), Vector3(0.025, 0.025, 0.62))
+		for z in [-0.08, 0.44]:
+			Modelagem.caixa(p.escuro, Vector3(0.3 * lado, 0.372, z), Vector3(0.02, 0.025, 0.02))
+	# para-choque de impulsão: barra grossa, quebra-mato cromado na frente da grade
+	Modelagem.caixa(p.escuro, Vector3(0.0, -0.075, -0.67), Vector3(0.8, 0.065, 0.06))
+	Modelagem.caixa(p.detalhe, Vector3(0.0, 0.1, -0.69), Vector3(0.36, 0.022, 0.022))
+	for x in [-0.17, 0.17]:
+		Modelagem.caixa(p.detalhe, Vector3(x, 0.02, -0.69), Vector3(0.022, 0.16, 0.022))
+	Modelagem.caixa(p.escuro, Vector3(0.0, -0.075, 0.665), Vector3(0.8, 0.06, 0.05))
+	# barras do bagageiro e barra de luz na frente do teto
+	for z in [0.0, 0.2, 0.4]:
+		Modelagem.caixa(p.escuro, Vector3(0.0, 0.39, z), Vector3(0.62, 0.016, 0.02))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.405, -0.11), Vector3(0.56, 0.05, 0.05))
+	for k in 4:
+		Modelagem.torno(p.farol, meia_bola(0.019), 12, Transform3D(de_frente.scaled(Vector3(1, 1, 0.4)), Vector3(-0.21 + 0.14 * k, 0.405, -0.136)))
+	# snorkel subindo pela coluna da direita
+	Modelagem.caixa(p.escuro, Vector3(0.385, 0.05, -0.29), Vector3(0.035, 0.12, 0.035))
+	Modelagem.caixa(p.escuro, Vector3(0.375, 0.24, -0.235), Vector3(0.035, 0.3, 0.035), Basis(Vector3.RIGHT, deg_to_rad(-14.0)))
+	Modelagem.caixa(p.escuro, Vector3(0.37, 0.39, -0.28), Vector3(0.045, 0.04, 0.08))
+	# estepe pendurado atrás da cabine
+	var estepe := Transform3D(Basis(Vector3.RIGHT, PI / 2.0), Vector3(0.0, 0.24, 0.585))
+	Modelagem.torno(p.escuro, [Vector2(0.06, -0.05), Vector2(0.11, -0.055), Vector2(0.125, -0.03), Vector2(0.125, 0.03), Vector2(0.11, 0.055), Vector2(0.06, 0.05)], 24, estepe)
+	Modelagem.torno(p.detalhe, [Vector2(0.065, 0.045), Vector2(0.0, 0.04)], 20, estepe)
+	# capô: duas entradas de ar
+	for x in [-0.12, 0.12]:
+		Modelagem.caixa(p.escuro, Vector3(x, 0.139, -0.42), Vector3(0.1, 0.008, 0.12))
+
+
 # ---------------------------------------------------------------- rodas
 
 static func montar_roda(r: Dictionary) -> ArrayMesh:
@@ -259,6 +366,13 @@ static func montar_roda(r: Dictionary) -> ArrayMesh:
 			var giro := Basis(Vector3.UP, TAU * k / n)
 			var largura_raio := 0.012 if r.get("fino", false) else 0.024
 			Modelagem.caixa(aro, giro * Vector3(0.0, (w - 0.014) * lado, 0.03 + comprimento / 2.0), Vector3(largura_raio, 0.012, comprimento), giro)
+	if r.get("cravos", false):
+		# blocos de borracha em volta do pneu, alternados (pneu de trilha)
+		for k in 22:
+			var giro := Basis(Vector3.UP, TAU * k / 22.0)
+			var lado := 1.0 if k % 2 == 0 else -1.0
+			Modelagem.caixa(borracha, giro * Vector3(0.0, w * 0.45 * lado, R + 0.002), Vector3(0.04, w * 0.5, 0.016), giro)
+			Modelagem.caixa(borracha, giro * Vector3(0.0, -w * 0.25 * lado, R + 0.002), Vector3(0.03, w * 0.4, 0.014), giro)
 	var malha := ArrayMesh.new()
 	Modelagem.adicionar(malha, borracha, "pneu", Materiais.liso(Color(0.045, 0.045, 0.05), 0.85))
 	Modelagem.adicionar(malha, aro, "aro", Materiais.liso(Color(0.78, 0.8, 0.84), 0.22, Color.BLACK, 0.0, 0.9))
