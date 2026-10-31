@@ -69,5 +69,12 @@ func rodar() -> void:
 	erros.sort()
 	if not erros.is_empty():
 		print("%s: diferença pro host em %d comparações: metade abaixo de %.1f cm, 95%% abaixo de %.1f cm, maior %.1f cm" % [nome, erros.size(), erros[erros.size() / 2] * 100.0, erros[int(erros.size() * 0.95)] * 100.0, erros[-1] * 100.0])
-	await create_timer(6.0).timeout
+	# o host solta uma explosão de gol perto de mim: o meu carro (que eu calculo aqui) tem que voar
+	var altura_explosao := 0.0
+	for i in 960:
+		await physics_frame
+		if not is_instance_valid(meu):
+			break
+		altura_explosao = maxf(altura_explosao, meu.global_position.y)
+	print("%s: explosão do gol perto de mim: no meu PC o meu carro subiu até %.1f m" % [nome, altura_explosao])
 	quit()

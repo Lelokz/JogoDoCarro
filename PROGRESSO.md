@@ -25,6 +25,14 @@ Diário do projeto. O mais novo fica em cima.
   faróis redondos, quebra-mato, snorkel, estribo, bagageiro com barra de luz, estepe atrás da cabine, pneu
   de trilha largo com cravos. Caixa 0,80 × 0,46 × 1,24 m (a mais alta).
 - Teste novo `teste_modelos.gd` (no `testar.sh`): cada carro anda, curva, pula e dá mortal (todos iguais).
+- **Explosão do gol consertada** (ele viu ela no meio do estádio e o carro mal voando):
+  - As partículas eram soltas antes de a explosão ir pro lugar e ficam no mundo → saíam do ponto zero (meio
+    do campo). Agora vão pro lugar e só depois disparam. A foto de teste agora é no gol (antes era no meio,
+    por isso eu não tinha visto).
+  - Empurrão mais forte e mais pra cima (raio 30 m, 30 m/s, força mínima 0,8): carro a 9 m sobe 10 m (era 1,3 m).
+  - Online: o amigo calcula o próprio carro na hora, e o PC dele não sabia da explosão (o host empurrava e
+    a correção trazia só uns centímetros). Agora a explosão do gol chega com a força e cada um empurra o
+    próprio carro. Teste de rede: no PC do amigo, o carro dele subiu 5,8 m com a explosão a 4 m.
 - **Achado:** os ajustes salvos no F1 (`jogo/ajustes/carro.json`) só valiam no PC; o site rodava com os
   valores originais. Agora os padrões do código são os dele: curva 1,3 (pediu mais curva: era 1,15),
   aderência 54, giro no freio de mão 1,3, força da batida da bola 0,8.

@@ -41,8 +41,8 @@ const VELOCIDADE_DEMOLIR := 10.0   # m/s
 const TEMPO_DEMOLIDO := 3.0        # s até voltar, perto do próprio gol
 const VOLTAS := [Vector3(-10, 0, 46), Vector3(10, 0, 46), Vector3(0, 0, 47)]   # lado do azul (o laranja é espelhado)
 # explosão do gol: empurra os carros perto, mais forte quanto mais rápida a bola entrou
-const RAIO_EXPLOSAO_GOL := 24.0    # m
-const EMPURRAO_GOL := 22.0         # m/s pra quem está colado na bola
+const RAIO_EXPLOSAO_GOL := 30.0    # m
+const EMPURRAO_GOL := 30.0         # m/s pra quem está colado na bola
 
 enum Estado { CONTAGEM, JOGANDO, GOL, FIM }
 
@@ -194,19 +194,26 @@ func ver_gol() -> void:
 
 
 func explodir_gol(onde: Vector3, time: String) -> void:
-	var forca := clampf(bola.linear_velocity.length() / 30.0, 0.5, 1.4)
-	nova_explosao(onde, Arena.COR_AZUL if time == "azul" else Arena.COR_LARANJA, 2.5 * forca)
+	# a explosão sai de onde a bola entrou; bola mais forte, explosão maior
+	var forca := clampf(bola.linear_velocity.length() / 30.0, 0.8, 1.4)
+	nova_explosao(onde, Arena.COR_AZUL if time == "azul" else Arena.COR_LARANJA, 2.5 * forca, forca)
 	for c in carros.values():
-		if c.explodido:
-			continue
-		var dif: Vector3 = c.global_position - onde
-		var distancia := dif.length()
-		if distancia > RAIO_EXPLOSAO_GOL:
-			continue
-		var perto := 1.0 - distancia / RAIO_EXPLOSAO_GOL
-		var direcao := (dif.normalized() + Vector3.UP * 0.5).normalized()
-		c.linear_velocity += direcao * EMPURRAO_GOL * forca * perto
-		c.angular_velocity += Vector3(randf_range(-3, 3), randf_range(-3, 3), randf_range(-3, 3)) * perto
+		empurrar_com_gol(c, onde, forca)
+
+
+func empurrar_com_gol(c: RigidBody3D, onde: Vector3, forca: float) -> void:
+	# joga longe e pra cima quem estiver perto (o amigo faz o mesmo no próprio carro quando a explosão
+	# chega pela rede; senão o carro dele, que ele mesmo calcula, mal se mexia)
+	if c.explodido:
+		return
+	var dif: Vector3 = c.global_position - onde
+	var distancia := dif.length()
+	if distancia > RAIO_EXPLOSAO_GOL:
+		return
+	var perto := pow(1.0 - distancia / RAIO_EXPLOSAO_GOL, 0.7)
+	var direcao := (dif.normalized() + Vector3.UP * 0.75).normalized()
+	c.linear_velocity += direcao * EMPURRAO_GOL * forca * perto
+	c.angular_velocity += Vector3(randf_range(-3, 3), randf_range(-3, 3), randf_range(-3, 3)) * perto
 
 
 func ver_demolicoes() -> void:
@@ -244,9 +251,9 @@ func reviver_demolidos() -> void:
 			colocar_na_saida(carros[id], times[id], VOLTAS.pick_random())
 
 
-func nova_explosao(onde: Vector3, cor: Color, tamanho: float) -> void:
+func nova_explosao(onde: Vector3, cor: Color, tamanho: float, forca_gol := 0.0) -> void:
 	numero_explosao += 1
-	explosoes.append([numero_explosao, onde, cor, tamanho])
+	explosoes.append([numero_explosao, onde, cor, tamanho, forca_gol])
 	if explosoes.size() > 4:
 		explosoes.pop_front()
 	Explosao.criar(get_parent(), onde, cor, tamanho)
@@ -437,6 +444,8 @@ func estado_chegou(dados: Array) -> void:
 			explosao_vista = e[0]
 			if not primeiro:
 				Explosao.criar(get_parent(), e[1], e[2], e[3])
+				if e.size() > 4 and e[4] > 0.0:
+					empurrar_com_gol(carro, e[1], e[4])
 	corrigir_meu_carro(dados)
 
 

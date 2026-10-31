@@ -49,6 +49,13 @@ func rodar() -> void:
 			quem = id
 	var andou: float = partida.carros[quem].global_position.distance_to(comeco[quem]) if partida.carros.has(quem) else 0.0
 	print("host: o carro do amigo que dirigiu (%s) andou %.1f m no meu PC, subiu até %.1f m (pulo), usou boost: %s" % [partida.times.get(quem, "?"), andou, mais_alto.get(quem, 0.0), "sim" if usou_boost.get(quem, false) else "NÃO"])
+	if partida.carros.has(quem):
+		# explosão de gol do lado do amigo que dirigiu: no PC dele, o carro dele tem que voar também
+		var alvo: Vector3 = partida.carros[quem].global_position
+		partida.explodir_gol(alvo + Vector3(0, 0, -4), "azul")
+		print("host: explosão de gol a 4 m do carro do amigo que dirigiu")
+		for i in 600:
+			await physics_frame
 	for i in 600:
 		await physics_frame
 		if partida.carros.size() < 3:

@@ -59,8 +59,16 @@ func rodar() -> void:
 	bola.visible = true
 	bola.global_transform = Transform3D(Basis(), Vector3(0, 2, -42))
 	bola.linear_velocity = Vector3(0, 0, -28)
-	await esperar(0.6)
-	print("gol: explosões novas %d · carro perto do gol jogado a %.1f m/s (subiu até %.1f m) · carro longe a %.1f m/s" % [partida.numero_explosao - explosoes_antes, carro.linear_velocity.length(), carro.global_position.y, outro.linear_velocity.length()])
+	var mais_alto := 0.0
+	var mais_rapido := 0.0
+	var onde_explodiu := Vector3.ZERO
+	for i in 360:
+		await physics_frame
+		mais_alto = maxf(mais_alto, carro.global_position.y)
+		mais_rapido = maxf(mais_rapido, carro.linear_velocity.length())
+		if partida.explosoes.size() > 0:
+			onde_explodiu = partida.explosoes[-1][1]
+	print("gol: explosões novas %d, em z = %.1f (o gol é z = -50) · carro a 8 m do gol jogado a %.1f m/s, subiu até %.1f m · carro longe a %.1f m/s" % [partida.numero_explosao - explosoes_antes, onde_explodiu.z, mais_rapido, mais_alto, outro.linear_velocity.length()])
 	quit()
 
 

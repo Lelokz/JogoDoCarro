@@ -49,8 +49,9 @@ func _process(_delta: float) -> bool:
 		root.get_node("Arena/Camera").make_current()
 		if f[1] == "explosao":
 			camera.make_current()
-			camera.look_at_from_position(Vector3(9, 3.5, 12), Vector3(0, 2, 0))
-			load("res://scripts/explosao.gd").criar(root.get_node("Arena"), Vector3(0, 1.5, 0), Color(1.0, 0.5, 0.1), 2.5)
+			# no gol, como na partida (a bola entra e a explosão sai de onde ela entrou)
+			camera.look_at_from_position(Vector3(12, 5, -34), Vector3(0, 2, -50))
+			load("res://scripts/explosao.gd").criar(root.get_node("Arena"), Vector3(0, 1.5, -51), Color(1.0, 0.5, 0.1), 2.5)
 			Engine.time_scale = 0.03   # câmera lenta: sem placa de vídeo cada quadro demora e a explosão acabava antes da foto
 		elif f[1] == "hud":
 			# só os números do mostrador (o carro está parado na contagem)

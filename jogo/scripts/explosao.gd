@@ -16,6 +16,10 @@ static func criar(onde: Node, posicao: Vector3, cor_: Color, tamanho_: float) ->
 	e.tamanho = tamanho_
 	onde.add_child(e)
 	e.global_position = posicao
+	# só solta as partículas depois de estar no lugar: elas ficam no mundo (não acompanham a explosão),
+	# então se soltassem antes saíam do ponto zero, no meio do campo
+	for p in e.get_children():
+		p.emitting = true
 	return e
 
 
@@ -60,7 +64,7 @@ func emissor(quantos: int, vida: float, raio: float, velocidade_min: float, velo
 	bolinha.rings = lados / 2
 	bolinha.material = Materiais.rastro()
 	p.mesh = bolinha
-	p.emitting = true
+	p.emitting = false
 	add_child(p)
 	return p
 
