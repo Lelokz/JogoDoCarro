@@ -464,7 +464,7 @@ func vestir(escolha: Dictionary) -> void:
 	for i in 4:
 		rodas[i].position = lugares[i] + Vector3.UP * ModeloCarro.ALTURA_RODA
 		var pneu: MeshInstance3D = rodas[i].get_node("Pneu")
-		pneu.mesh = ModeloCarro.roda(aparencia.modelo)
+		pneu.mesh = ModeloCarro.roda(aparencia.modelo, i >= 2)
 		usar_materiais(pneu)
 	rastro.position = d.turbina
 	$Corpo.mesh = ModeloCarro.corpo(aparencia.modelo)

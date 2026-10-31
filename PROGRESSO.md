@@ -28,6 +28,9 @@ Diário do projeto. O mais novo fica em cima.
 - **Besouro** (3º): tudo redondo, para-lamas bojudos com os faróis em cima dos da frente (tipo fusca),
   estribo, cabine em domo, friso cromado no capô, grelha do motor, para-choques com garras, rodas com
   calota cromada e faixa branca. Caixa 0,82 × 0,38 × 1,24 m.
+- **Flecha** (4º): fórmula de roda exposta, bico pontudo, sidepods, cockpit aberto com piloto de capacete
+  (cor dos detalhes; o chapéu vai no capacete), tomada de ar, asa dianteira e traseira, braços de suspensão,
+  rodas finas na frente e largas atrás (`roda_tras`). Caixa 0,85 × 0,29 × 1,29 m.
 - **Explosão do gol consertada** (ele viu ela no meio do estádio e o carro mal voando):
   - As partículas eram soltas antes de a explosão ir pro lugar e ficam no mundo → saíam do ponto zero (meio
     do campo). Agora vão pro lugar e só depois disparam. A foto de teste agora é no gol (antes era no meio,

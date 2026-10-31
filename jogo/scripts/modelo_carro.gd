@@ -51,6 +51,17 @@ const MODELOS := [
 		"traseira": Vector3(0.0, 0.15, 0.55),
 		"roda": {"largura": 0.12, "aro": 0.112, "raios": 0, "calota": true, "faixa_branca": true},
 	},
+	{
+		"nome": "Flecha",
+		"caixa": Vector3(0.85, 0.29, 1.29),
+		"centro": Vector3(0.0, -0.02, 0.0),
+		"rodas": Vector3(0.44, -0.47, 0.44),
+		"turbina": Vector3(0.0, -0.045, 0.665),
+		"teto": Vector3(0.0, 0.195, -0.01),       # o chapéu vai no capacete do piloto
+		"traseira": Vector3(0.0, 0.0, 0.4),
+		"roda": {"largura": 0.09, "aro": 0.12, "raios": 5},
+		"roda_tras": {"largura": 0.17, "aro": 0.12, "raios": 5},
+	},
 ]
 const ALTURA_RODA := -0.08
 const ARCO_Y := -0.13     # centro dos arcos das rodas (a roda parada fica uns 6,5 cm abaixo do ponto da mola)
@@ -74,11 +85,15 @@ static func corpo(modelo := 0) -> ArrayMesh:
 	return malhas_corpo[modelo]
 
 
-static func roda(modelo := 0) -> ArrayMesh:
+static func roda(modelo := 0, tras := false) -> ArrayMesh:
+	# alguns modelos têm as rodas de trás diferentes (mais largas)
 	modelo = clampi(modelo, 0, MODELOS.size() - 1)
-	if not malhas_roda.has(modelo):
-		malhas_roda[modelo] = montar_roda(MODELOS[modelo].roda)
-	return malhas_roda[modelo]
+	var d: Dictionary = MODELOS[modelo]
+	var qual: Dictionary = d.roda_tras if tras and d.has("roda_tras") else d.roda
+	var chave := "%d %s" % [modelo, qual == d.get("roda_tras")]
+	if not malhas_roda.has(chave):
+		malhas_roda[chave] = montar_roda(qual)
+	return malhas_roda[chave]
 
 
 static func enfeite(qual: int) -> ArrayMesh:
@@ -121,6 +136,8 @@ static func montar_corpo(modelo: int) -> ArrayMesh:
 			montar_tanque(p)
 		"Besouro":
 			montar_besouro(p)
+		"Flecha":
+			montar_flecha(p)
 	# turbina do boost (o rastro sai dali)
 	var t: Vector3 = MODELOS[modelo].turbina
 	var deitado := Transform3D(Basis(Vector3.RIGHT, PI / 2.0), t + Vector3(0, 0, -0.06))
@@ -434,6 +451,75 @@ static func montar_besouro(p: Pecas) -> void:
 		var y := Lataria.valor(BESOURO_CORPO.topo, z)
 		var inclinacao := atan2(Lataria.valor(BESOURO_CORPO.topo, z + 0.01) - y, 0.01)
 		Modelagem.caixa(p.escuro, Vector3(0.0, y + 0.003, z), Vector3(0.22, 0.008, 0.012), Basis(Vector3.RIGHT, -inclinacao))
+
+
+# ---------------------------------------------------------------- Flecha
+# Roda exposta, tipo fórmula: corpo fino e comprido com bico pontudo, entradas de ar dos lados, cockpit
+# aberto com o piloto de capacete (na cor dos detalhes), tomada de ar em cima, asa dianteira larga, asa
+# traseira grande nas colunas e braços de suspensão até as rodas. Rodas finas na frente, largas atrás.
+
+const FLECHA_CORPO := {
+	"topo": [[-0.745, -0.075], [-0.66, -0.05], [-0.45, 0.0], [-0.25, 0.05], [-0.13, 0.08], [0.0, 0.09], [0.1, 0.19], [0.22, 0.2], [0.4, 0.12], [0.6, 0.06], [0.665, 0.03]],
+	"fundo": [[-0.745, -0.1], [-0.66, -0.13], [0.665, -0.13]],
+	"cintura": [[-0.745, -0.09], [-0.3, -0.06], [0.665, -0.04]],
+	"largura": [[-0.745, 0.035], [-0.6, 0.07], [-0.4, 0.11], [-0.2, 0.17], [0.1, 0.2], [0.4, 0.17], [0.6, 0.12], [0.665, 0.1]],
+	"ombro": [[-0.745, 0.65], [-0.1, 0.65], [0.15, 0.45], [0.665, 0.6]],
+	"forma": [[-0.745, 2.5], [0.665, 2.5]],
+}
+const FLECHA_LATERAL := {
+	"x": 0.26,
+	"topo": [[-0.16, -0.03], [-0.08, 0.04], [0.22, 0.04], [0.42, -0.04]],
+	"fundo": [[-0.16, -0.12], [0.42, -0.12]],
+	"cintura": [[-0.16, -0.05], [0.42, -0.06]],
+	"largura": [[-0.16, 0.04], [-0.05, 0.1], [0.25, 0.09], [0.42, 0.03]],
+	"ombro": [[-0.16, 0.85], [0.42, 0.85]],
+	"forma": [[-0.16, 3.0], [0.42, 3.0]],
+}
+
+
+static func montar_flecha(p: Pecas) -> void:
+	var d := MODELOS[3] as Dictionary
+	lataria(p, FLECHA_CORPO)
+	lataria(p, FLECHA_LATERAL, [], true)
+	p.usou_detalhe = true
+	# cockpit aberto: buraco escuro, piloto de capacete com viseira e o arco de proteção
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.088, -0.04), Vector3(0.2, 0.012, 0.22))
+	Modelagem.torno(p.detalhe, meia_bola(0.07), 18, Transform3D(Basis(), Vector3(0.0, 0.125, -0.01)))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.135, -0.066), Vector3(0.1, 0.03, 0.02), Basis(Vector3.RIGHT, deg_to_rad(-15.0)))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.16, -0.12), Vector3(0.016, 0.016, 0.16), Basis(Vector3.RIGHT, deg_to_rad(-25.0)))
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(p.escuro, Vector3(0.09 * lado, 0.14, -0.03), Vector3(0.014, 0.014, 0.2), Basis(Vector3.UP, deg_to_rad(-10.0 * lado)))
+	# tomada de ar em cima do motor
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.17, 0.085), Vector3(0.09, 0.045, 0.02))
+	# asa dianteira: duas lâminas e placas nas pontas
+	Modelagem.caixa(p.pinta, Vector3(0.0, -0.105, -0.69), Vector3(0.84, 0.014, 0.12))
+	Modelagem.caixa(p.escuro, Vector3(0.0, -0.08, -0.655), Vector3(0.78, 0.01, 0.06), Basis(Vector3.RIGHT, deg_to_rad(-18.0)))
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(p.escuro, Vector3(0.42 * lado, -0.08, -0.69), Vector3(0.012, 0.07, 0.16))
+	# asa traseira: perfil grande + aba, placas nas pontas com luz e a coluna do meio
+	Modelagem.caixa(p.pinta, Vector3(0.0, 0.3, 0.6), Vector3(0.7, 0.022, 0.16), Basis(Vector3.RIGHT, deg_to_rad(-10.0)))
+	Modelagem.caixa(p.pinta, Vector3(0.0, 0.335, 0.655), Vector3(0.7, 0.012, 0.07), Basis(Vector3.RIGHT, deg_to_rad(-30.0)))
+	for lado in [-1.0, 1.0]:
+		Modelagem.caixa(p.escuro, Vector3(0.355 * lado, 0.25, 0.61), Vector3(0.015, 0.17, 0.24))
+		Modelagem.caixa(p.lanterna, Vector3(0.363 * lado, 0.31, 0.72), Vector3(0.004, 0.04, 0.012))
+	Modelagem.caixa(p.escuro, Vector3(0.0, 0.17, 0.6), Vector3(0.03, 0.24, 0.07))
+	# luz de chuva atrás e luz no bico
+	Modelagem.caixa(p.lanterna, Vector3(0.0, 0.035, 0.668), Vector3(0.07, 0.02, 0.01))
+	Modelagem.caixa(p.farol, Vector3(0.0, -0.065, -0.742), Vector3(0.03, 0.01, 0.01))
+	# difusor atrás
+	for x in [-0.1, -0.03, 0.03, 0.1]:
+		Modelagem.caixa(p.escuro, Vector3(x, -0.12, 0.64), Vector3(0.008, 0.05, 0.07))
+	# braços da suspensão: do corpo até o meio de cada roda (em cima e embaixo)
+	for z in [d.rodas.y, d.rodas.z]:
+		for lado in [-1.0, 1.0]:
+			var corpo_x := Lataria.valor(FLECHA_CORPO.largura, z) * 0.85
+			var roda_x: float = d.rodas.x - 0.05
+			for y in [[-0.11, -0.13], [-0.03, -0.1]]:
+				var de := Vector3(corpo_x * lado, y[0], z)
+				var ate := Vector3(roda_x * lado, y[1], z)
+				var meio := (de + ate) / 2.0
+				var giro := Basis(Vector3.BACK, atan2(ate.y - de.y, ate.x - de.x))
+				Modelagem.caixa(p.escuro, meio, Vector3(de.distance_to(ate), 0.012, 0.025), giro)
 
 
 # ---------------------------------------------------------------- rodas
