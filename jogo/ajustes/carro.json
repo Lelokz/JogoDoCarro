@@ -17,7 +17,7 @@
 		"giro_freio_mao": 1.3,
 		"grude": 3.25,
 		"mola": 8000.0,
-		"multiplicador_curva": 1.15,
+		"multiplicador_curva": 1.3,
 		"velocidade_maxima": 23.0
 	},
 	"mundo": {

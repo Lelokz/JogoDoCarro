@@ -7,7 +7,7 @@ extends RefCounted
 # e o host repassa no estado, junto com o carro.
 # É só aparência: todos os carros têm a mesma física e a mesma caixa de batida.
 
-const ARQUIVO := "user://carro.json"
+const ARQUIVO := "user://personalizacao.json"   # (o carro.json é do painel F1 no site)
 const MODELOS := ["Raio"]
 const SOBRE_MODELOS := ["Superesportivo em cunha: comprido, baixo e estreito"]
 const DETALHES := [

@@ -11,6 +11,21 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 31/10/2026 (tarde): carros novos (1º: Raio), curva e ajustes no site
+- **Carros refeitos do zero, um por vez com o OK dele** (os 5 antigos e o Padrão saíram: "achatados no
+  comprimento", "todos iguais"). Sistema novo `scripts/lataria.gd`: carroceria lisa por curvas de projeto
+  (linha de cima, largura, cintura, quão redondo), arcos das rodas recortados, cabine com vidro e teto.
+- **Como no Rocket League, cada modelo tem a sua caixa de batida e o lugar das rodas** (`ModeloCarro.MODELOS`);
+  o resto da física é igual (motor, pulo, boost, giro no ar) e o "peso de giro" (inércia) é o mesmo pra todos.
+- **Raio** (aprovado): superesportivo em cunha, 1,32 m de ponta a ponta (o antigo tinha 1,18), para-lamas em
+  ombros por cima das rodas, cabine em gota, barra de luz atrás, difusor, rodas de 10 raios e pneu baixo.
+  Caixa 0,80 × 0,30 × 1,315 m. Testes de física iguais; batida reta na bola um pouco mais fraca (57 × 61 km/h).
+- `./fotos_carro.sh PASTA MODELO`: folha com o carro no pódio de 6 lados (sem abrir janela).
+- **Achado:** os ajustes salvos no F1 (`jogo/ajustes/carro.json`) só valiam no PC; o site rodava com os
+  valores originais. Agora os padrões do código são os dele: curva 1,3 (pediu mais curva: era 1,15),
+  aderência 54, giro no freio de mão 1,3, força da batida da bola 0,8.
+- A personalização salva em `user://personalizacao.json` (antes dividia o `carro.json` com o F1 no site).
+
 ## 31/10/2026 (dia): menu com JOGAR e tela Personalizar
 - **Menu mais limpo:** a tela inicial tem só JOGAR (grande), PERSONALIZAR, OPÇÕES (e SAIR no PC). O JOGAR
   abre CRIAR SALA, ENTRAR NA SALA (o campo do código só aparece quando clica), JOGAR SOLO (bot fácil /

@@ -13,13 +13,13 @@ extends RigidBody3D
 
 @export_group("Direção")
 @export var forca_motor := 1.0            # multiplica a tabela ACELERACAO
-@export var multiplicador_curva := 1.0    # multiplica a tabela CURVATURA
+@export var multiplicador_curva := 1.3   # multiplica a tabela CURVATURA (os padrões daqui são os ajustes dele no F1: o site não lê o ajustes/carro.json)
 @export var freio := 35.0                 # m/s²
 @export var desaceleracao_solto := 5.25   # m/s², sem acelerar nem frear
 @export var velocidade_maxima := 23.0     # m/s
-@export var aderencia := 60.0             # m/s² que os pneus seguram de lado
+@export var aderencia := 54.0             # m/s² que os pneus seguram de lado
 @export var aderencia_freio_mao := 8.0
-@export var giro_freio_mao := 1.4         # vira quanto a mais no freio de mão
+@export var giro_freio_mao := 1.3         # vira quanto a mais no freio de mão
 @export var volta_aderencia := 0.6        # s pro pneu voltar a agarrar depois de soltar o freio de mão
 @export var endireitar := 2.0             # quanto o carro gira sozinho pra apontar pra onde está indo
 @export var angulo_visual_roda := 0.45    # rad, só a roda desenhada

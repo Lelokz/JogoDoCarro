@@ -6,7 +6,7 @@ extends RigidBody3D
 
 @export var carro_caminho: NodePath
 @export var empurrao_extra := 1.0        # multiplica o empurrão extra (1 = referência)
-@export var forca_batida := 1.0          # multiplica tudo que a bola ganha numa batida (física + empurrão)
+@export var forca_batida := 0.8          # multiplica tudo que a bola ganha numa batida (física + empurrão)
 @export var velocidade_maxima := 60.0    # m/s
 
 const GIRO_MAXIMO := 6.0                 # rad/s
