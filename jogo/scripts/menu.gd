@@ -1,6 +1,7 @@
 extends Control
 
-# Menu inicial: jogar solo, criar sala / entrar na de um amigo, campo de teste e opções.
+# Menu inicial: JOGAR, opções e sair. O JOGAR abre criar sala / entrar na de um amigo, jogar solo
+# e o campo de treinamento; ESC ou VOLTAR voltam uma tela.
 # No PC é pelo endereço; pelo terminal também dá: -- --hospedar  ou  -- --entrar=ENDEREÇO (usado nos testes).
 # No navegador é por sala com código; o link site/?sala=ABCD já entra direto (e ?hospedar cria uma, pros testes).
 #
@@ -20,8 +21,10 @@ const OLHAR := Vector3(-1.05, 0.42, 2.7)
 var endereco := LineEdit.new()
 var codigo := LineEdit.new()
 var aviso := Label.new()
-var opcoes := VBoxContainer.new()
+var inicio := VBoxContainer.new()         # JOGAR, opções, sair
+var pagina_jogar := VBoxContainer.new()   # depois do JOGAR: sala, solo, campo de treinamento
 var escolha_solo := VBoxContainer.new()   # depois do JOGAR SOLO: treino livre ou contra o bot
+var linha_entrar := HBoxContainer.new()   # campo do código (ou endereço) + ENTRAR, aparece no ENTRAR NA SALA
 var lado := Control.new()          # título + botões (aparece no fim do carregamento)
 var carregando := VBoxContainer.new()
 var barra := ProgressBar.new()
@@ -110,10 +113,11 @@ func montar_lado() -> void:
 	lado.add_child(sombra)
 
 	var coluna := VBoxContainer.new()
+	# preso em cima: o título fica no mesmo lugar quando troca de tela (só os botões mudam)
+	coluna.anchor_top = 0.11
 	coluna.anchor_bottom = 1.0
 	coluna.offset_left = 70
 	coluna.offset_right = 70 + 420
-	coluna.alignment = BoxContainer.ALIGNMENT_CENTER
 	coluna.add_theme_constant_override("separation", 0)
 	lado.add_child(coluna)
 	coluna.add_child(Estilo.rotulo("FUTEBOL", 66, Estilo.TEXTO, Estilo.titulo()))
@@ -124,64 +128,65 @@ func montar_lado() -> void:
 	var espaco := Control.new()
 	espaco.custom_minimum_size.y = 22
 	coluna.add_child(espaco)
-	opcoes.add_theme_constant_override("separation", 10)
-	coluna.add_child(opcoes)
-	montar_escolha_solo(coluna)
+	for pagina in [inicio, pagina_jogar, escolha_solo]:
+		pagina.add_theme_constant_override("separation", 10)
+		coluna.add_child(pagina)
 
-	var jogar := botao("JOGAR SOLO", func() -> void:
-		opcoes.visible = false
-		escolha_solo.visible = true
-		escolha_solo.get_child(1).get_child(1).grab_focus())
-	jogar.add_theme_stylebox_override("normal", Estilo.caixa(Color(0.95, 0.45, 0.1, 0.95), Color(1, 0.8, 0.5, 0.6), 10, 1, 22))
-	jogar.add_theme_stylebox_override("hover", Estilo.caixa(Color(1.0, 0.58, 0.2, 1.0), Color.WHITE, 10, 2, 22))
-	jogar.add_theme_stylebox_override("pressed", Estilo.caixa(Color(0.85, 0.38, 0.08, 1.0), Color.WHITE, 10, 2, 22))
-	jogar.custom_minimum_size.y = 62
-	jogar.add_theme_font_override("font", Estilo.titulo())
-	jogar.add_theme_font_size_override("font_size", 28)
-	opcoes.add_child(jogar)
-	var linha := HBoxContainer.new()
-	linha.add_theme_constant_override("separation", 8)
+	# tela inicial: só o JOGAR grande, opções e sair
+	inicio.add_child(botao_grande("JOGAR", func() -> void: mostrar(pagina_jogar)))
+	inicio.add_child(botao("OPÇÕES", func() -> void: add_child(TelaOpcoes.new())))
+	if not OS.has_feature("web"):
+		inicio.add_child(botao("SAIR DO JOGO", func() -> void: get_tree().quit()))
+
+	# depois do JOGAR: sala, solo e campo de treinamento
+	pagina_jogar.add_child(Estilo.rotulo("JOGAR", 20, Estilo.LARANJA, Estilo.titulo()))
+	linha_entrar.visible = false
+	linha_entrar.add_theme_constant_override("separation", 8)
 	if OS.has_feature("web"):
-		opcoes.add_child(botao("CRIAR SALA", criar_sala))
+		pagina_jogar.add_child(botao("CRIAR SALA", criar_sala))
+		pagina_jogar.add_child(botao("ENTRAR NA SALA", func() -> void: abrir_entrar(codigo)))
 		codigo.placeholder_text = "código da sala"
 		codigo.max_length = 4
 		codigo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		codigo.text_submitted.connect(func(_texto: String) -> void: entrar_na_sala())
-		linha.add_child(codigo)
+		linha_entrar.add_child(codigo)
 		var entrar_sala := botao("ENTRAR", entrar_na_sala)
 		entrar_sala.custom_minimum_size.x = 130
-		linha.add_child(entrar_sala)
+		linha_entrar.add_child(entrar_sala)
 	else:
-		opcoes.add_child(botao("HOSPEDAR PARTIDA", hospedar))
+		pagina_jogar.add_child(botao("HOSPEDAR PARTIDA", hospedar))
+		pagina_jogar.add_child(botao("ENTRAR NA PARTIDA", func() -> void: abrir_entrar(endereco)))
 		endereco.placeholder_text = "endereço do host"
 		endereco.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		endereco.text_submitted.connect(func(_texto: String) -> void: entrar())
-		linha.add_child(endereco)
+		linha_entrar.add_child(endereco)
 		var entrar_host := botao("ENTRAR", entrar)
 		entrar_host.custom_minimum_size.x = 130
-		linha.add_child(entrar_host)
+		linha_entrar.add_child(entrar_host)
 		if FileAccess.file_exists(ULTIMO_ENDERECO):
 			endereco.text = FileAccess.get_file_as_string(ULTIMO_ENDERECO).strip_edges()
 	codigo.custom_minimum_size.y = 52
 	endereco.custom_minimum_size.y = 52
-	opcoes.add_child(linha)
-	opcoes.add_child(botao("CAMPO DE TESTE", func() -> void: Rede.treinar("res://cenas/campo_teste.tscn")))
-	opcoes.add_child(botao("OPÇÕES", func() -> void: add_child(TelaOpcoes.new())))
-	if not OS.has_feature("web"):
-		opcoes.add_child(botao("SAIR DO JOGO", func() -> void: get_tree().quit()))
+	pagina_jogar.add_child(linha_entrar)
+	pagina_jogar.add_child(botao("JOGAR SOLO", func() -> void: mostrar(escolha_solo)))
+	pagina_jogar.add_child(botao("CAMPO DE TREINAMENTO", func() -> void: Rede.treinar("res://cenas/campo_teste.tscn")))
+	pagina_jogar.add_child(botao("VOLTAR", voltar))
+	montar_escolha_solo()
+
+	var espaco_aviso := Control.new()
+	espaco_aviso.custom_minimum_size.y = 10
+	coluna.add_child(espaco_aviso)
 	aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	aviso.add_theme_color_override("font_color", Color(1.0, 0.75, 0.4))
 	aviso.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
 	aviso.add_theme_constant_override("outline_size", 5)
-	opcoes.add_child(aviso)
+	coluna.add_child(aviso)
 	aviso.text = Rede.aviso
 	Rede.aviso = ""
+	mostrar(inicio)
 
 
-func montar_escolha_solo(coluna: VBoxContainer) -> void:
-	escolha_solo.visible = false
-	escolha_solo.add_theme_constant_override("separation", 10)
-	coluna.add_child(escolha_solo)
+func montar_escolha_solo() -> void:
 	escolha_solo.add_child(Estilo.rotulo("CONTRA O BOT", 20, Estilo.LARANJA, Estilo.titulo()))
 	var niveis := HBoxContainer.new()
 	niveis.add_theme_constant_override("separation", 8)
@@ -197,9 +202,45 @@ func montar_escolha_solo(coluna: VBoxContainer) -> void:
 	espaco.custom_minimum_size.y = 6
 	escolha_solo.add_child(espaco)
 	escolha_solo.add_child(botao("TREINO LIVRE (sem adversário)", func() -> void: Rede.treinar()))
-	escolha_solo.add_child(botao("VOLTAR", func() -> void:
-		escolha_solo.visible = false
-		opcoes.visible = true))
+	escolha_solo.add_child(botao("VOLTAR", voltar))
+
+
+func mostrar(pagina: VBoxContainer) -> void:
+	for outra in [inicio, pagina_jogar, escolha_solo]:
+		outra.visible = outra == pagina
+	linha_entrar.visible = false
+	# foco no primeiro botão, pra dar pra jogar no controle
+	for filho in pagina.find_children("*", "Button", true, false):
+		filho.grab_focus.call_deferred()
+		break
+
+
+func voltar() -> void:
+	aviso.text = ""
+	mostrar(pagina_jogar if escolha_solo.visible else inicio)
+
+
+func abrir_entrar(campo: LineEdit) -> void:
+	linha_entrar.visible = not linha_entrar.visible
+	if linha_entrar.visible:
+		campo.grab_focus.call_deferred()
+
+
+func _unhandled_input(evento: InputEvent) -> void:
+	if evento.is_action_pressed("menu") and lado.visible and not inicio.visible:
+		get_viewport().set_input_as_handled()
+		voltar()
+
+
+func botao_grande(texto: String, ao_clicar: Callable) -> Button:
+	var b := botao(texto, ao_clicar)
+	b.add_theme_stylebox_override("normal", Estilo.caixa(Color(0.95, 0.45, 0.1, 0.95), Color(1, 0.8, 0.5, 0.6), 10, 1, 22))
+	b.add_theme_stylebox_override("hover", Estilo.caixa(Color(1.0, 0.58, 0.2, 1.0), Color.WHITE, 10, 2, 22))
+	b.add_theme_stylebox_override("pressed", Estilo.caixa(Color(0.85, 0.38, 0.08, 1.0), Color.WHITE, 10, 2, 22))
+	b.custom_minimum_size.y = 72
+	b.add_theme_font_override("font", Estilo.titulo())
+	b.add_theme_font_size_override("font_size", 34)
+	return b
 
 
 func botao(texto: String, ao_clicar: Callable) -> Button:
