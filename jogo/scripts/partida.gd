@@ -60,6 +60,7 @@ const FILA_MAXIMA := 4
 var fila_comandos := {}
 var comando_usado := {}
 var tempo_ajustes := 0.0
+var malhas_dos_pads := {}
 # quem entrou: o que o próprio carro calculou em cada comando, pra comparar com o host
 var historico := {}
 var comando_anterior := -1
@@ -457,26 +458,19 @@ func linha_do_time() -> String:
 func criar_pad(onde: Vector2, grande: bool) -> void:
 	var raiz := Node3D.new()
 	raiz.position = Vector3(onde.x, 0.0, onde.y)
+	var malhas := malhas_do_pad(grande)
 	var base := MeshInstance3D.new()
-	base.mesh = CylinderMesh.new()
-	base.mesh.top_radius = 1.6 if grande else 0.9
-	base.mesh.bottom_radius = base.mesh.top_radius
-	base.mesh.height = 0.04
-	base.position.y = 0.02
-	base.material_override = Materiais.liso(Color(0.25, 0.22, 0.2))
+	base.mesh = malhas[0]
 	var brilho := MeshInstance3D.new()
+	brilho.mesh = malhas[1]
+	brilho.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var orbe: MeshInstance3D = null
 	if grande:
-		brilho.mesh = SphereMesh.new()
-		brilho.mesh.radius = 0.55
-		brilho.mesh.height = 1.1
-		brilho.position.y = 1.0
-	else:
-		brilho.mesh = CylinderMesh.new()
-		brilho.mesh.top_radius = 0.45
-		brilho.mesh.bottom_radius = 0.45
-		brilho.mesh.height = 0.08
-		brilho.position.y = 0.06
-	brilho.material_override = Materiais.liso(Color(1.0, 0.6, 0.15), 0.5, Color(1.0, 0.5, 0.1), 2.0)
+		orbe = MeshInstance3D.new()
+		orbe.mesh = malhas[2]
+		orbe.position.y = 1.0
+		orbe.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		brilho.add_child(orbe)
 	raiz.add_child(base)
 	raiz.add_child(brilho)
 	add_child(raiz)
@@ -487,13 +481,55 @@ func criar_pad(onde: Vector2, grande: bool) -> void:
 		"espera": 10.0 if grande else 4.0,
 		"volta_em": 0.0,
 		"brilho": brilho,
+		"orbe": orbe,
 	})
 
 
+func malhas_do_pad(grande: bool) -> Array:
+	# [base, anel aceso, esfera do pad grande]: montadas uma vez só pra cada tamanho
+	# (montar as 34 uma por uma deixava o carregamento do site uns segundos mais lento)
+	if malhas_dos_pads.has(grande):
+		return malhas_dos_pads[grande]
+	# base de metal com borda e um anel aceso (o anel apaga junto quando o pad é pego)
+	var r := 1.6 if grande else 0.9
+	var metal := Modelagem.nova()
+	Modelagem.torno(metal, [Vector2(r, 0.0), Vector2(r, 0.05), Vector2(r - 0.12, 0.07), Vector2(r * 0.72, 0.06), Vector2(0.0, 0.05)], 32)
+	var malha_base := ArrayMesh.new()
+	Modelagem.adicionar(malha_base, metal, "base", Materiais.liso(Color(0.16, 0.17, 0.19), 0.35, Color.BLACK, 0.0, 0.7))
+	var aceso := Modelagem.nova()
+	Modelagem.torno(aceso, [Vector2(r * 0.7, 0.072), Vector2(r * 0.58, 0.072)], 32)
+	if not grande:
+		Modelagem.torno(aceso, [Vector2(0.4, 0.075), Vector2(0.0, 0.075)], 24)
+	var luz := Materiais.luz(Color(1.0, 0.55, 0.12), 3.0)
+	var malha_brilho := ArrayMesh.new()
+	Modelagem.adicionar(malha_brilho, aceso, "brilho", luz)
+	var malha_orbe: ArrayMesh = null
+	if grande:
+		# esfera de energia flutuando em cima do pad grande
+		var bola_de_luz := Modelagem.nova()
+		Modelagem.torno(bola_de_luz, esfera(0.5, 12), 20)
+		malha_orbe = ArrayMesh.new()
+		Modelagem.adicionar(malha_orbe, bola_de_luz, "orbe", luz)
+	malhas_dos_pads[grande] = [malha_base, malha_brilho, malha_orbe]
+	return malhas_dos_pads[grande]
+
+
+func esfera(raio: float, fatias: int) -> Array:
+	# perfil de meia esfera pro Modelagem.torno (de baixo pra cima, lado de fora à direita)
+	var perfil := []
+	for k in fatias + 1:
+		var a := PI * k / fatias - PI / 2.0
+		perfil.append(Vector2(cos(a) * raio, sin(a) * raio))
+	return perfil
+
+
 func atualizar_pads() -> void:
+	var agora := Time.get_ticks_msec() / 1000.0
 	for pad in pads:
 		var ativo: bool = tempo_total >= pad["volta_em"]
 		pad["brilho"].visible = ativo
+		if pad["orbe"]:
+			pad["orbe"].position.y = 1.0 + 0.12 * sin(agora * 2.5)
 		if not ativo:
 			continue
 		for c in carros.values():

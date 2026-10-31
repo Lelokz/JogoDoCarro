@@ -23,9 +23,13 @@ var material_vidro: ShaderMaterial
 
 
 func _ready() -> void:
-	material = Materiais.chao_da_arena(COMPRIMENTO / 2.0, GOL_LARGURA / 2.0)
-	material_vidro = Materiais.vidro(COMPRIMENTO / 2.0)
+	material = Materiais.gramado(COMPRIMENTO / 2.0, LARGURA / 2.0, GOL_LARGURA / 2.0)
+	material_vidro = Materiais.vidro(ALTURA)
 	criar_chao_de_fora()
+	criar_arquibancada()
+	for x in [-1.0, 1.0]:
+		for z in [-1.0, 1.0]:
+			criar_torre_de_luz(Vector3(62.0 * x, 0.0, 80.0 * z))
 	criar_bloco(Vector3(0, -0.5, 0), Vector3(LARGURA + 2.0, 1.0, COMPRIMENTO + 2.0 * GOL_FUNDO + 4.0), material)
 	# teto: só colisão, pra ver o céu
 	criar_bloco(Vector3(0, ALTURA + 0.5, 0), Vector3(LARGURA + 2.0, 1.0, COMPRIMENTO + 2.0), null)
@@ -133,9 +137,20 @@ func triangulo(malha: SurfaceTool, faces: PackedVector3Array, vertices: Array) -
 
 
 func criar_gol(lado: float, cor: Color) -> void:
-	var rede := Materiais.transparente(Color(cor.r, cor.g, cor.b, 0.35))
+	var rede := Materiais.rede(cor)
 	var g := GOL_LARGURA / 2.0
 	var linha := lado * COMPRIMENTO / 2.0
+	# trave e travessão acesos na cor do time (só desenho: quem segura a bola é a parede)
+	var trave := Modelagem.nova()
+	for x in [-(g + 0.15), g + 0.15]:
+		Modelagem.caixa(trave, Vector3(x, GOL_ALTURA / 2.0, linha + lado * 0.15), Vector3(0.3, GOL_ALTURA + 0.3, 0.3))
+	Modelagem.caixa(trave, Vector3(0, GOL_ALTURA + 0.15, linha + lado * 0.15), Vector3(GOL_LARGURA + 0.6, 0.3, 0.3))
+	var malha := ArrayMesh.new()
+	Modelagem.adicionar(malha, trave, "trave", Materiais.liso(cor.lerp(Color.WHITE, 0.3), 0.3, cor, 2.5))
+	var desenho := MeshInstance3D.new()
+	desenho.mesh = malha
+	desenho.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(desenho)
 	criar_bloco(Vector3(0, GOL_ALTURA / 2.0, linha + lado * (GOL_FUNDO + 0.5)), Vector3(GOL_LARGURA + 2.0, GOL_ALTURA, 1.0), rede)
 	criar_bloco(Vector3(-(g + 0.5), GOL_ALTURA / 2.0, linha + lado * GOL_FUNDO / 2.0), Vector3(1.0, GOL_ALTURA, GOL_FUNDO), rede)
 	criar_bloco(Vector3(g + 0.5, GOL_ALTURA / 2.0, linha + lado * GOL_FUNDO / 2.0), Vector3(1.0, GOL_ALTURA, GOL_FUNDO), rede)
@@ -143,12 +158,102 @@ func criar_gol(lado: float, cor: Color) -> void:
 
 
 func criar_chao_de_fora() -> void:
-	# só pra aparecer pelo vidro: um chão escuro em volta da arena
+	# só pra aparecer pelo vidro: o chão em volta da arena
 	var desenho := MeshInstance3D.new()
 	desenho.mesh = PlaneMesh.new()
 	desenho.mesh.size = Vector2(600, 600)
-	desenho.position.y = -1.0
-	desenho.material_override = Materiais.liso(Color(0.07, 0.08, 0.1), 0.9)
+	desenho.position.y = -0.05
+	desenho.material_override = Materiais.liso(Color(0.09, 0.1, 0.12), 0.9)
+	add_child(desenho)
+
+
+func criar_arquibancada() -> void:
+	# estádio em volta: muro com painel de LED, corredor, degraus com a torcida, muro de trás e cobertura.
+	# Vista de cima é um retângulo de cantos redondos um pouco maior que a arena (contando os gols).
+	var a := LARGURA / 2.0 + 4.0
+	var b := COMPRIMENTO / 2.0 + GOL_FUNDO + 3.0
+	var raio := 24.0
+	var volta := []   # [ponto no chão, direção pra fora, metros andados]
+	var andou := 0.0
+	var centros := [Vector3(a - raio, 0, -(b - raio)), Vector3(a - raio, 0, b - raio), Vector3(-(a - raio), 0, b - raio), Vector3(-(a - raio), 0, -(b - raio))]
+	for c in 4:
+		for k in 13:
+			var angulo := deg_to_rad(-90.0 + 90.0 * c + 90.0 * k / 12.0)
+			var fora := Vector3(cos(angulo), 0, sin(angulo))
+			var ponto: Vector3 = centros[c] + fora * raio
+			if not volta.is_empty():
+				andou += ponto.distance_to(volta[-1][0])
+			volta.append([ponto, fora, andou])
+	volta.append([volta[0][0], volta[0][1], andou + volta[0][0].distance_to(volta[-1][0])])
+
+	var muro := Modelagem.nova()
+	var led := Modelagem.nova()
+	var corredor := Modelagem.nova()
+	var torcida := Modelagem.nova()
+	var cobertura := Modelagem.nova()
+	var luzes := Modelagem.nova()
+	faixa_em_volta(muro, volta, Vector2(0, 0), Vector2(0, 4.2))
+	faixa_em_volta(led, volta, Vector2(-0.05, 1.0), Vector2(-0.05, 3.4), true)
+	faixa_em_volta(corredor, volta, Vector2(0, 4.2), Vector2(1.8, 4.2))
+	faixa_em_volta(torcida, volta, Vector2(1.8, 4.2), Vector2(32, 26))
+	faixa_em_volta(muro, volta, Vector2(32, 26), Vector2(32, 30))
+	faixa_em_volta(cobertura, volta, Vector2(32, 30), Vector2(14, 33))
+	faixa_em_volta(luzes, volta, Vector2(15.5, 32.7), Vector2(14, 32.95))
+	var malha := ArrayMesh.new()
+	Modelagem.adicionar(malha, muro, "muro", Materiais.liso(Color(0.06, 0.065, 0.08), 0.7))
+	Modelagem.adicionar(malha, led, "painel de LED", Materiais.painel_de_led())
+	Modelagem.adicionar(malha, corredor, "corredor", Materiais.liso(Color(0.22, 0.23, 0.25), 0.9))
+	Modelagem.adicionar(malha, torcida, "torcida", Materiais.torcida())
+	Modelagem.adicionar(malha, cobertura, "cobertura", Materiais.liso(Color(0.1, 0.11, 0.13), 0.5, Color.BLACK, 0.0, 0.4))
+	Modelagem.adicionar(malha, luzes, "luzes", Materiais.luz(Color(1.0, 0.97, 0.9), 3.0))
+	var desenho := MeshInstance3D.new()
+	desenho.mesh = malha
+	desenho.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(desenho)
+
+
+func faixa_em_volta(st: SurfaceTool, volta: Array, de: Vector2, ate: Vector2, uv_de_0_a_1 := false) -> void:
+	# um pedaço do corte do estádio [pra fora, altura] repetido em toda a volta.
+	# UV: x = metros andados na volta, y = metros (ou 0 a 1) subindo pelo pedaço
+	var t := ate - de
+	var n2 := Vector2(-t.y, t.x).normalized()   # virado pro campo / pra cima
+	var comprimento := 1.0 if uv_de_0_a_1 else t.length()
+	for i in volta.size() - 1:
+		var p := []
+		var n := []
+		var uv := []
+		for canto in [[i, de, 0.0], [i + 1, de, 0.0], [i + 1, ate, comprimento], [i, ate, comprimento]]:
+			var v: Array = volta[canto[0]]
+			var onde: Vector2 = canto[1]
+			p.append(v[0] + v[1] * onde.x + Vector3.UP * onde.y)
+			n.append((v[1] * n2.x + Vector3.UP * n2.y).normalized())
+			uv.append(Vector2(v[2], canto[2]))
+		for k in [0, 1, 2, 0, 2, 3]:
+			st.set_normal(n[k])
+			st.set_uv(uv[k])
+			st.add_vertex(p[k])
+
+
+func criar_torre_de_luz(onde: Vector3) -> void:
+	# poste alto com um painel de refletores virado pro meio do campo
+	var altura := 48.0
+	var estrutura := Modelagem.nova()
+	var lampadas := Modelagem.nova()
+	Modelagem.caixa(estrutura, Vector3(0, altura / 2.0, 0), Vector3(1.4, altura, 1.4))
+	var olhar := Basis.looking_at(-Vector3(onde.x, 0, onde.z).normalized() + Vector3.DOWN * 0.45)
+	var painel := Vector3(0, altura + 2.5, 0)
+	Modelagem.caixa(estrutura, painel, Vector3(11.0, 6.0, 0.8), olhar)
+	for linha in 3:
+		for coluna in 5:
+			var p := Vector3(-4.0 + 2.0 * coluna, -1.8 + 1.8 * linha, -0.45)
+			Modelagem.caixa(lampadas, painel + olhar * p, Vector3(1.5, 1.3, 0.12), olhar)
+	var malha := ArrayMesh.new()
+	Modelagem.adicionar(malha, estrutura, "estrutura", Materiais.liso(Color(0.12, 0.13, 0.15), 0.6, Color.BLACK, 0.0, 0.5))
+	Modelagem.adicionar(malha, lampadas, "lâmpadas", Materiais.luz(Color(1.0, 0.98, 0.92), 6.0))
+	var desenho := MeshInstance3D.new()
+	desenho.mesh = malha
+	desenho.position = onde
+	desenho.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(desenho)
 
 

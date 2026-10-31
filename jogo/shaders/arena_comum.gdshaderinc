@@ -1,12 +1,10 @@
-// Desenho da arena, usado no chão (superficie.gdshader) e nas paredes (transparente.gdshader):
-// grade em todas as superfícies, metade azul e metade laranja,
-// e no chão: linha do meio, círculo central e linha do gol.
+// Coisas compartilhadas pelos dois shaders (superficie.gdshader e transparente.gdshader):
+// cores dos times, tamanho do campo, grade das paredes e a normal certa dos dois lados do triângulo.
 
-uniform vec3 cor_base : source_color = vec3(0.13, 0.15, 0.18);
-uniform vec3 cor_linha : source_color = vec3(0.30, 0.33, 0.38);
 uniform vec3 cor_azul : source_color = vec3(0.15, 0.4, 1.0);
 uniform vec3 cor_laranja : source_color = vec3(1.0, 0.5, 0.1);
 uniform float metade_comprimento = 50.0;
+uniform float meia_largura = 40.0;
 uniform float meia_largura_gol = 9.0;
 
 varying vec3 posicao_mundo;
@@ -24,25 +22,29 @@ float faixa(float distancia, float largura) {
 	return 1.0 - smoothstep(largura, largura + fwidth(distancia), abs(distancia));
 }
 
-float linhas_da_grade() {
+float linhas_da_grade(float passo, float largura) {
+	// grade "projetada" dos três lados, pra funcionar no chão, na parede e na curva
 	vec3 peso = abs(normal_mundo);
 	peso /= peso.x + peso.y + peso.z;
-	return grade(posicao_mundo.xz, 4.0, 0.04) * peso.y
-		+ grade(posicao_mundo.xy, 4.0, 0.04) * peso.z
-		+ grade(posicao_mundo.zy, 4.0, 0.04) * peso.x;
+	return grade(posicao_mundo.xz, passo, largura) * peso.y
+		+ grade(posicao_mundo.xy, passo, largura) * peso.z
+		+ grade(posicao_mundo.zy, passo, largura) * peso.x;
 }
 
-vec3 cor_da_arena(float linhas) {
-	vec3 time = posicao_mundo.z > 0.0 ? cor_azul : cor_laranja;
-	vec3 cor = mix(cor_base, time * 0.35, 0.35);
-	cor = mix(cor, cor_linha + time * 0.2, linhas);
-	if (normal_mundo.y > 0.9 && posicao_mundo.y < 0.1) {
-		float meio = faixa(posicao_mundo.z, 0.2);
-		float circulo = faixa(length(posicao_mundo.xz) - 10.0, 0.2);
-		float linha_gol = faixa(abs(posicao_mundo.z) - metade_comprimento, 0.2) * step(abs(posicao_mundo.x), meia_largura_gol);
-		cor = mix(cor, vec3(0.9), max(max(meio, circulo), linha_gol));
-	}
-	return cor;
+vec3 cor_do_time() {
+	return posicao_mundo.z > 0.0 ? cor_azul : cor_laranja;
+}
+
+float sorteio(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float ruido(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(sorteio(i), sorteio(i + vec2(1.0, 0.0)), f.x),
+		mix(sorteio(i + vec2(0.0, 1.0)), sorteio(i + vec2(1.0, 1.0)), f.x), f.y);
 }
 
 vec3 normal_certa(mat4 vista) {

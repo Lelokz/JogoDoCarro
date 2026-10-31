@@ -11,6 +11,27 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 31/10/2026: visual novo (carro, bola e estádio)
+- Pedido teu: "deixar o jogo parecendo de profissional". **Só a aparência mudou:** as caixas de colisão
+  do carro, da bola e da arena são as mesmas, então a física que tu aprovou continua igual.
+- Tudo é montado por código (`scripts/modelagem.gd` = ferramentas; `scripts/modelo_carro.gd` = carro),
+  e continua com **só 2 shaders** (regra do carregamento rápido no site).
+- **Carro:** carroceria esportiva em duas cores (pintura do time em cima, saia escura embaixo),
+  para-lamas em arco, cabine de vidro com teto pintado, aerofólio, entradas de ar, faróis e lanternas
+  que brilham, turbina atrás que acende no boost, rodas com pneu arredondado e aro de 5 raios (girando).
+- **Bola:** gomos de bola de futebol (12 pentágonos pretos e 20 hexágonos brancos) com costura.
+- **Campo:** gramado com listras de corte e manchas, marcação (meio, círculo, áreas, borda), área do
+  gol com um toque da cor do time. Rampa escura com placas e faixa de luz na cor do time; vidro limpo.
+  Trave e travessão acesos; rede de verdade (quadradinhos).
+- **Estádio:** arquibancada em volta com torcida (azul de um lado, laranja do outro, uns pulando),
+  escadas e corredor, painel de LED com setas correndo, cobertura com luz, 4 torres de refletores.
+- **Luz:** céu de fim de tarde, sol de lado, brilho nas luzes (bloom), névoa leve. Pads de boost novos
+  (base de metal com anel aceso; o grande tem uma esfera de energia flutuando).
+- HUD mostra o FPS. `./tirar_fotos.sh PASTA` tira fotos do visual sem abrir janela.
+- Medido no navegador com placa de vídeo: **60 FPS**. Carregamento na 1ª visita (pior caso, sem
+  memória de shaders): menu pronto em ~15 s (era ~10 s); das próximas vezes é mais rápido.
+  **Falta:** otimizar a montagem da arena pra voltar pros ~10 s.
+
 ## 30/10/2026: salas com código no site (passo 2 de "jogar pela internet sem baixar nada")
 - Tu ativou o **Realtime Database** no rocketwar-2a302 (modo bloqueado). As regras ficam em
   `regras_banco.json` e são publicadas junto com o site: só deixam gravar recados de sala no formato

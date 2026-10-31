@@ -166,6 +166,7 @@ func _process(_delta: float) -> void:
 			janela_escondida = null
 			carregando.visible = false
 			opcoes.visible = true
+			print("[menu] pronto em %.1f s" % (Time.get_ticks_msec() / 1000.0))
 			pedidos_iniciais()
 			return
 	barra.value = etapa + 1
@@ -184,8 +185,15 @@ func mostrar_pedaco(mostrar: Callable) -> void:
 
 
 func usa_shader(no: Node, shader: Shader) -> bool:
-	var material: Material = no.material_override if no is GeometryInstance3D else null
-	return material is ShaderMaterial and material.shader == shader
+	var materiais: Array = [no.material_override if no is GeometryInstance3D else null]
+	if no is MeshInstance3D and no.mesh:
+		# os modelos montados por código têm um material em cada pedaço
+		for i in no.mesh.get_surface_count():
+			materiais.append(no.mesh.surface_get_material(i))
+	for material in materiais:
+		if material is ShaderMaterial and material.shader == shader:
+			return true
+	return false
 
 
 func montar_aviso(caixa: VBoxContainer) -> void:

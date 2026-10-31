@@ -9,6 +9,13 @@
 [ext_resource type="PackedScene" path="res://cenas/bola.tscn" id="6"]
 
 [sub_resource type="ProceduralSkyMaterial" id="mat_ceu"]
+sky_top_color = Color(0.11, 0.24, 0.52, 1)
+sky_horizon_color = Color(0.86, 0.68, 0.56, 1)
+sky_curve = 0.12
+ground_bottom_color = Color(0.05, 0.05, 0.07, 1)
+ground_horizon_color = Color(0.5, 0.42, 0.42, 1)
+sun_angle_max = 20.0
+sun_curve = 0.08
 
 [sub_resource type="Sky" id="ceu"]
 sky_material = SubResource("mat_ceu")
@@ -17,7 +24,21 @@ sky_material = SubResource("mat_ceu")
 background_mode = 2
 sky = SubResource("ceu")
 ambient_light_source = 3
+ambient_light_sky_contribution = 0.85
+reflected_light_source = 2
 tonemap_mode = 2
+tonemap_white = 6.0
+glow_enabled = true
+glow_intensity = 0.55
+glow_bloom = 0.04
+glow_hdr_threshold = 1.1
+fog_enabled = true
+fog_light_color = Color(0.62, 0.6, 0.66, 1)
+fog_density = 0.0012
+fog_sky_affect = 0.0
+adjustment_enabled = true
+adjustment_contrast = 1.06
+adjustment_saturation = 1.12
 
 [node name="Arena" type="Node3D"]
 script = ExtResource("1")
@@ -26,8 +47,13 @@ script = ExtResource("1")
 environment = SubResource("ambiente")
 
 [node name="Sol" type="DirectionalLight3D" parent="."]
-rotation = Vector3(-0.9, 0.5, 0)
+rotation = Vector3(-0.62, 1.85, 0)
+light_color = Color(1, 0.9, 0.78, 1)
+light_energy = 1.25
 shadow_enabled = true
+shadow_bias = 0.04
+shadow_blur = 1.5
+directional_shadow_max_distance = 70.0
 
 [node name="Carro" parent="." instance=ExtResource("2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.32, 42)

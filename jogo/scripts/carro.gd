@@ -95,16 +95,22 @@ var direcao_mortal := Vector2.ZERO
 var tempo_desvirando := 0.0
 var eixo_desvirar := Vector3.ZERO
 var rastro: CPUParticles3D
+var tinta := ModeloCarro.pintura(Color(0.2, 0.45, 0.95))   # cada carro tem a sua (cor do time)
+var turbina := ModeloCarro.turbina()                      # e a sua turbina (acende no boost)
 
 
 func _ready() -> void:
 	add_to_group("carros")
 	ponto_inicial = global_transform
-	$Corpo.material_override = Materiais.liso(Color(0.2, 0.45, 0.95))
-	$Cabine.material_override = Materiais.liso(Color(0.08, 0.1, 0.16), 0.2)
-	var pneu := Materiais.liso(Color(0.07, 0.07, 0.07))
+	$Corpo.mesh = ModeloCarro.corpo()
+	for i in $Corpo.mesh.get_surface_count():
+		match $Corpo.mesh.surface_get_name(i):
+			"pintura":
+				$Corpo.set_surface_override_material(i, tinta)
+			"turbina":
+				$Corpo.set_surface_override_material(i, turbina)
 	for roda in rodas:
-		roda.get_node("Pneu").material_override = pneu
+		roda.get_node("Pneu").mesh = ModeloCarro.roda()
 	criar_rastro()
 
 
@@ -127,6 +133,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		estimar_rodas()
 	rastro.emitting = boostando
+	turbina.set_shader_parameter("forca_brilho", 4.0 if boostando else 0.5)
 	atualizar_rodas_desenhadas(delta)
 
 
@@ -407,7 +414,7 @@ func definir_simulacao(ligada: bool) -> void:
 
 
 func definir_time(time: String) -> void:
-	$Corpo.material_override = Materiais.liso(Color(0.2, 0.45, 0.95) if time == "azul" else Color(1.0, 0.5, 0.12))
+	tinta.set_shader_parameter("cor", Color(0.2, 0.45, 0.95) if time == "azul" else Color(1.0, 0.5, 0.12))
 
 
 func estimar_rodas() -> void:
@@ -470,7 +477,7 @@ func curva(tabela: Array, x: float) -> float:
 
 func criar_rastro() -> void:
 	rastro = CPUParticles3D.new()
-	rastro.position = Vector3(0.0, 0.0, 0.62)
+	rastro.position = Vector3(0.0, -0.03, 0.65)
 	rastro.amount = 80
 	rastro.lifetime = 0.35
 	rastro.emitting = false

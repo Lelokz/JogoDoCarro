@@ -1,20 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/carro.gd" id="1"]
 
 [sub_resource type="BoxShape3D" id="forma"]
 size = Vector3(0.84, 0.36, 1.18)
-
-[sub_resource type="BoxMesh" id="malha_corpo"]
-size = Vector3(0.84, 0.36, 1.18)
-
-[sub_resource type="BoxMesh" id="malha_cabine"]
-size = Vector3(0.7, 0.18, 0.5)
-
-[sub_resource type="CylinderMesh" id="malha_roda"]
-top_radius = 0.17
-bottom_radius = 0.17
-height = 0.12
 
 [node name="Carro" type="RigidBody3D"]
 mass = 180.0
@@ -24,32 +13,23 @@ script = ExtResource("1")
 shape = SubResource("forma")
 
 [node name="Corpo" type="MeshInstance3D" parent="."]
-mesh = SubResource("malha_corpo")
-
-[node name="Cabine" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.27, 0.08)
-mesh = SubResource("malha_cabine")
 
 [node name="RodaFE" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.46, -0.08, -0.42)
 
 [node name="Pneu" type="MeshInstance3D" parent="RodaFE"]
-mesh = SubResource("malha_roda")
 
 [node name="RodaFD" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.46, -0.08, -0.42)
 
 [node name="Pneu" type="MeshInstance3D" parent="RodaFD"]
-mesh = SubResource("malha_roda")
 
 [node name="RodaTE" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.46, -0.08, 0.42)
 
 [node name="Pneu" type="MeshInstance3D" parent="RodaTE"]
-mesh = SubResource("malha_roda")
 
 [node name="RodaTD" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.46, -0.08, 0.42)
 
 [node name="Pneu" type="MeshInstance3D" parent="RodaTD"]
-mesh = SubResource("malha_roda")
