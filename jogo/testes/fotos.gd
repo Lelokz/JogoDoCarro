@@ -13,6 +13,7 @@ const FOTOS := [
 	["5_geral", Vector3(34, 17, 62), Vector3(0, 0, 0)],
 	["6_gol", Vector3(9, 4, 30), Vector3(0, 3, 50)],
 	["7_arquibancada", Vector3(-10, 3, 5), Vector3(40, 14, 20)],
+	["1b_hud_rapido", "hud", null],
 	["8_pausa", "pausa", null],
 	["9_opcoes", "opcoes", null],
 ]
@@ -42,7 +43,16 @@ func _process(_delta: float) -> bool:
 	var f: Array = FOTOS[foto]
 	if f[1] is String:
 		root.get_node("Arena/Camera").make_current()
-		if f[1] == "pausa":
+		if f[1] == "hud":
+			# só os números do mostrador (o carro está parado na contagem)
+			var hud: Node = root.get_node("Arena/Hud")
+			hud.set_process(false)
+			hud.velocimetro.velocidade = 22.4
+			hud.velocimetro.supersonico = true
+			hud.velocimetro.boost = 64.0
+			hud.velocimetro.boostando = true
+		elif f[1] == "pausa":
+			root.get_node("Arena/Hud").set_process(true)
 			# carregado na hora: scripts -s não enxergam os autoloads que a Pausa usa na compilação
 			var pausa: Node = load("res://scripts/pausa.gd").new()
 			pausa.name = "Pausa"
