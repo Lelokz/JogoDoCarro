@@ -11,6 +11,24 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 31/10/2026 (dia): menu com JOGAR e tela Personalizar
+- **Menu mais limpo:** a tela inicial tem só JOGAR (grande), PERSONALIZAR, OPÇÕES (e SAIR no PC). O JOGAR
+  abre CRIAR SALA, ENTRAR NA SALA (o campo do código só aparece quando clica), JOGAR SOLO (bot fácil /
+  médio / difícil ou treino livre) e CAMPO DE TREINAMENTO (o antigo campo de teste). ESC ou VOLTAR voltam.
+  O título fica parado; só os botões trocam.
+- **Personalizar:** o carro sobe num pódio redondo com luz azul e a câmera vem pra frente dele.
+  - Esquerda: os carros (por enquanto só o Padrão; os outros 4 vêm na próxima etapa).
+  - Direita: ver no time azul/laranja; DETALHES (faixas de corrida no meio do carro + cor das rodas, 8
+    cores, "Nenhum" = sem faixa e roda prata); FOGO DO BOOST (8 cores: turbina e rastro); RASTRO (fogo,
+    faíscas que caem, fumaça que cresce); ENFEITE (antena com bandeirinha do time, cartola, aerofólio alto).
+  - Cada clique já aparece no carro (trocar fogo/rastro mostra o boost por 2,5 s). SALVAR guarda no
+    navegador; VOLTAR ou ESC desfaz.
+- A cor principal continua a do time. É só aparência: física e caixa de batida iguais pra todos.
+- **Pela rede:** quem entra manda o visual pro host (um número só) e o host repassa no estado; todo mundo
+  vê o carro de cada um do jeito que ele montou. O bot sai com um visual sorteado.
+- Faixas feitas no mesmo shader do carro (nada de shader novo pro navegador compilar).
+- Teste de rede agora confere a personalização: host vê "Chapéu Azul" e "Antena Rosa" dos dois amigos.
+
 ## 31/10/2026 (noite): pausa, opções, HUD, menu novo e explosões
 Tu aprovou a ordem e foi dormir; cada passo foi publicado e o print foi pro teu WhatsApp.
 - **Pausa no ESC:** continuar / opções / voltar pro menu. Sozinho o jogo para; online segue por trás

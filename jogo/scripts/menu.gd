@@ -17,6 +17,10 @@ const LARANJA := Color(1.0, 0.5, 0.12)
 const ONDE_CARRO := Vector3(0.0, 0.0, 3.0)
 const CAMERA := Vector3(1.0, 0.85, 6.1)
 const OLHAR := Vector3(-1.05, 0.42, 2.7)
+# Personalizar: o carro sobe num pódio e a câmera vem pra frente dele, no meio da tela
+const CAMERA_PODIO := Vector3(0.0, 1.25, 6.4)
+const OLHAR_PODIO := Vector3(0.0, 0.42, 3.0)
+const ALTURA_PODIO := 0.2
 
 var endereco := LineEdit.new()
 var codigo := LineEdit.new()
@@ -39,6 +43,10 @@ var etapa := -1
 var quadro := 0
 var tempo := 0.0
 var aparecendo := -1.0             # de 0 a 1 quando o menu aparece (o fundo escuro some)
+var podio := MeshInstance3D.new()
+var bola: Node3D
+var no_podio := 0.0                # 0 = menu, 1 = personalizar (anda aos poucos entre os dois)
+var tela_personalizar: TelaPersonalizar
 
 
 func _ready() -> void:
@@ -134,6 +142,7 @@ func montar_lado() -> void:
 
 	# tela inicial: só o JOGAR grande, opções e sair
 	inicio.add_child(botao_grande("JOGAR", func() -> void: mostrar(pagina_jogar)))
+	inicio.add_child(botao("PERSONALIZAR", abrir_personalizar))
 	inicio.add_child(botao("OPÇÕES", func() -> void: add_child(TelaOpcoes.new())))
 	if not OS.has_feature("web"):
 		inicio.add_child(botao("SAIR DO JOGO", func() -> void: get_tree().quit()))
@@ -227,7 +236,7 @@ func abrir_entrar(campo: LineEdit) -> void:
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if evento.is_action_pressed("menu") and lado.visible and not inicio.visible:
+	if evento.is_action_pressed("menu") and lado.visible and not inicio.visible and tela_personalizar == null:
 		get_viewport().set_input_as_handled()
 		voltar()
 
@@ -251,8 +260,21 @@ func botao(texto: String, ao_clicar: Callable) -> Button:
 	return b
 
 
+func abrir_personalizar() -> void:
+	aviso.text = ""
+	tela_personalizar = TelaPersonalizar.new()
+	tela_personalizar.carro = carro
+	tela_personalizar.fechou.connect(func() -> void:
+		tela_personalizar = null
+		lado.visible = true
+		mostrar(inicio))
+	add_child(tela_personalizar)
+	lado.visible = false
+
+
 func _process(delta: float) -> void:
 	tempo += delta
+	no_podio = move_toward(no_podio, 1.0 if tela_personalizar else 0.0, delta * 1.8)
 	if aparecendo >= 0.0 and aparecendo < 1.0:
 		aparecendo = minf(aparecendo + delta * 1.5, 1.0)
 		fundo.modulate.a = 1.0 - aparecendo
@@ -315,7 +337,12 @@ func virar_vitrine() -> void:
 	carro.rastro.emitting = false
 	carro.process_mode = Node.PROCESS_MODE_DISABLED
 	altura_carro = carro.global_position.y if carro.global_position.y > 0.2 else 0.32
-	var bola: Node3D = arena.get_node("Bola")
+	carro.vestir(Aparencia.minha())
+	carro.rastro.process_mode = Node.PROCESS_MODE_ALWAYS   # o carro está parado, mas o boost aparece no Personalizar
+	podio.mesh = malha_podio()
+	podio.visible = false
+	arena.add_child(podio)
+	bola = arena.get_node("Bola")
 	bola.process_mode = Node.PROCESS_MODE_DISABLED
 	bola.global_position = ONDE_CARRO + Vector3(0.6, 0.9125, -5.0)
 	var camera: Camera3D = arena.get_node("Camera")
@@ -329,13 +356,33 @@ func virar_vitrine() -> void:
 func girar_carro() -> void:
 	if carro == null or not is_instance_valid(carro) or carro.process_mode != Node.PROCESS_MODE_DISABLED:
 		return
-	carro.global_transform = Transform3D(Basis(Vector3.UP, tempo * 0.4 + 2.2), ONDE_CARRO + Vector3.UP * altura_carro)
-	# a pintura vai do azul pro laranja e volta
-	var mistura := smoothstep(0.35, 0.65, 0.5 + 0.5 * sin(tempo * 0.5))
-	carro.tinta.set_shader_parameter("cor", AZUL.lerp(LARANJA, mistura))
+	var p := smoothstep(0.0, 1.0, no_podio)
+	carro.global_transform = Transform3D(Basis(Vector3.UP, tempo * 0.4 + 2.2), ONDE_CARRO + Vector3.UP * (altura_carro + ALTURA_PODIO * p))
+	# o pódio sobe do chão; a bola sai da frente
+	podio.visible = p > 0.0
+	podio.position = ONDE_CARRO + Vector3.UP * (ALTURA_PODIO * p - ALTURA_PODIO)
+	bola.visible = p < 0.3
+	if tela_personalizar == null:
+		# a pintura vai do azul pro laranja e volta (no Personalizar é o botão de time que manda)
+		var mistura := smoothstep(0.35, 0.65, 0.5 + 0.5 * sin(tempo * 0.5))
+		carro.tinta.set_shader_parameter("cor", AZUL.lerp(LARANJA, mistura))
 	var camera: Camera3D = arena.get_node("Camera")
-	camera.global_position = CAMERA + Vector3(sin(tempo * 0.15) * 0.25, sin(tempo * 0.21) * 0.06, 0.0)
-	camera.look_at(OLHAR)
+	var balanco := Vector3(sin(tempo * 0.15) * 0.25, sin(tempo * 0.21) * 0.06, 0.0) * (1.0 - p)
+	camera.global_position = CAMERA.lerp(CAMERA_PODIO, p) + balanco
+	camera.look_at(OLHAR.lerp(OLHAR_PODIO, p))
+
+
+func malha_podio() -> ArrayMesh:
+	# disco escuro com a borda chanfrada e duas faixas de luz em volta
+	var base := Modelagem.nova()
+	var luz := Modelagem.nova()
+	Modelagem.torno(base, [Vector2(0.0, 0.0), Vector2(1.15, 0.0), Vector2(1.15, 0.06), Vector2(1.1, 0.1), Vector2(1.1, 0.16), Vector2(1.04, ALTURA_PODIO), Vector2(0.0, ALTURA_PODIO)], 48)
+	Modelagem.torno(luz, [Vector2(1.152, 0.025), Vector2(1.152, 0.04)], 48)
+	Modelagem.torno(luz, [Vector2(0.98, ALTURA_PODIO + 0.002), Vector2(0.94, ALTURA_PODIO + 0.002)], 48)
+	var malha := ArrayMesh.new()
+	Modelagem.adicionar(malha, base, "base", Materiais.liso(Color(0.06, 0.07, 0.09), 0.3, Color.BLACK, 0.0, 0.7))
+	Modelagem.adicionar(malha, luz, "luz", Materiais.luz(Color(0.35, 0.7, 1.0), 5.0))
+	return malha
 
 
 func pedidos_iniciais() -> void:

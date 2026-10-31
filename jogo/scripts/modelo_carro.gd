@@ -8,6 +8,7 @@ extends RefCounted
 
 static var malha_corpo: ArrayMesh
 static var malha_roda: ArrayMesh
+static var malhas_enfeite := {}
 
 # cortes da carroceria, da frente pra trás: [z, meia largura embaixo, em cima, y de baixo, y de cima, raio embaixo, em cima]
 const CARROCERIA := [
@@ -47,6 +48,16 @@ static func roda() -> ArrayMesh:
 	if malha_roda == null:
 		malha_roda = montar_roda()
 	return malha_roda
+
+
+static func enfeite(qual: int) -> ArrayMesh:
+	# antena, chapéu ou aerofólio (o 0 é sem enfeite). Pedaços "pintura" (cor do time),
+	# "escuro" e "detalhe" (cor dos detalhes), que cada carro troca pelos seus
+	if qual <= 0:
+		return null
+	if not malhas_enfeite.has(qual):
+		malhas_enfeite[qual] = montar_enfeite(qual)
+	return malhas_enfeite[qual]
 
 
 static func pintura(cor: Color) -> ShaderMaterial:
@@ -145,6 +156,49 @@ static func para_lama(st: SurfaceTool, roda_em: Vector3) -> void:
 		Modelagem.quadrado(st, [c + d0 * raio_fora + Vector3(dentro, 0, 0), c + d1 * raio_fora + Vector3(dentro, 0, 0), c + d1 * raio_fora + Vector3(fora, 0, 0), c + d0 * raio_fora + Vector3(fora, 0, 0)], [d0, d1, d1, d0])
 		Modelagem.quadrado(st, [c + d0 * raio_dentro + Vector3(dentro, 0, 0), c + d1 * raio_dentro + Vector3(dentro, 0, 0), c + d1 * raio_dentro + Vector3(fora, 0, 0), c + d0 * raio_dentro + Vector3(fora, 0, 0)], [-d0, -d1, -d1, -d0])
 		Modelagem.quadrado(st, [c + d0 * raio_dentro + Vector3(fora, 0, 0), c + d1 * raio_dentro + Vector3(fora, 0, 0), c + d1 * raio_fora + Vector3(fora, 0, 0), c + d0 * raio_fora + Vector3(fora, 0, 0)], [lado_fora, lado_fora, lado_fora, lado_fora])
+
+
+static func montar_enfeite(qual: int) -> ArrayMesh:
+	var pinta := Modelagem.nova()
+	var escuro := Modelagem.nova()
+	var detalhe := Modelagem.nova()
+	match qual:
+		1:
+			# antena atrás à direita, com bolinha na ponta e bandeirinha do time
+			var pe := Vector3(0.3, 0.11, 0.42)
+			var giro := Basis(Vector3.RIGHT, deg_to_rad(-12.0))
+			Modelagem.caixa(escuro, pe + giro * Vector3(0, 0.2, 0), Vector3(0.012, 0.4, 0.012), giro)
+			var ponta := pe + giro * Vector3(0, 0.4, 0)
+			Modelagem.torno(detalhe, meia_bola(0.026), 12, Transform3D(Basis(), ponta))
+			Modelagem.caixa(pinta, pe + giro * Vector3(0, 0.33, 0.075), Vector3(0.006, 0.09, 0.14), giro)
+		2:
+			# cartola em cima do teto, meio de lado
+			var onde := Transform3D(Basis(Vector3.BACK, deg_to_rad(-8.0)), Vector3(0.0, 0.244, 0.12))
+			Modelagem.torno(escuro, [Vector2(0.0, 0.0), Vector2(0.16, 0.0), Vector2(0.16, 0.014), Vector2(0.095, 0.016), Vector2(0.1, 0.175), Vector2(0.0, 0.175)], 24, onde)
+			Modelagem.torno(detalhe, [Vector2(0.0975, 0.03), Vector2(0.0985, 0.065)], 24, onde)
+		3:
+			# aerofólio alto de corrida por cima do de série
+			var inclinado := Basis(Vector3.RIGHT, deg_to_rad(-9.0))
+			Modelagem.caixa(pinta, Vector3(0.0, 0.37, 0.57), Vector3(0.86, 0.02, 0.17), inclinado)
+			for x in [-0.22, 0.22]:
+				Modelagem.caixa(escuro, Vector3(x, 0.305, 0.56), Vector3(0.018, 0.12, 0.045))
+			for x in [-0.435, 0.435]:
+				Modelagem.caixa(detalhe, Vector3(x, 0.365, 0.575), Vector3(0.012, 0.07, 0.2))
+	var malha := ArrayMesh.new()
+	Modelagem.adicionar(malha, escuro, "escuro", Materiais.liso(Color(0.035, 0.04, 0.045), 0.45, Color.BLACK, 0.0, 0.3))
+	Modelagem.adicionar(malha, detalhe, "detalhe", Materiais.liso(Color(0.78, 0.8, 0.84), 0.22, Color.BLACK, 0.0, 0.9))
+	if qual != 2:
+		Modelagem.adicionar(malha, pinta, "pintura", pintura(Color(0.2, 0.45, 0.95)))
+	return malha
+
+
+static func meia_bola(raio: float) -> Array:
+	# perfil do torno pra uma bolinha: de baixo pra cima pelo lado de fora
+	var perfil := []
+	for k in 9:
+		var a := PI * k / 8.0
+		perfil.append(Vector2(raio * sin(a), -raio * cos(a)))
+	return perfil
 
 
 static func montar_roda() -> ArrayMesh:

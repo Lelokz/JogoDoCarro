@@ -15,6 +15,7 @@ uniform float aspereza = 0.8;
 uniform float metal = 0.0;
 uniform vec3 brilho : source_color = vec3(0.0);   // cor que brilha sozinha (luzes, pads de boost)
 uniform float forca_brilho = 0.0;
+uniform vec4 cor_faixas : source_color = vec4(0.0);   // pintura do carro: faixas de corrida (alfa 0 = sem)
 
 const float FI = 1.618034;   // proporção áurea: monta os gomos da bola
 const float FI_INV = 0.618034;
@@ -141,6 +142,12 @@ void fragment() {
 	if (tipo == 0) {
 		albedo = gramado();
 		rugosidade = 0.9;
+	} else if (tipo == 1 && cor_faixas.a > 0.0) {
+		// duas faixas no meio do carro, de ponta a ponta, só da metade pra cima
+		float x = abs(posicao_local.x);
+		float largura = fwidth(x);
+		float f = smoothstep(0.045 - largura, 0.045 + largura, x) * (1.0 - smoothstep(0.095 - largura, 0.095 + largura, x));
+		albedo = mix(albedo, cor_faixas.rgb, f * step(-0.03, posicao_local.y));
 	} else if (tipo == 2) {
 		albedo = bola(rugosidade);
 	} else if (tipo == 3) {

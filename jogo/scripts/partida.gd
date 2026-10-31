@@ -90,7 +90,10 @@ func _ready() -> void:
 		criar_pad(p, false)
 	var eu := multiplayer.get_unique_id()
 	carros[eu] = carro
+	carro.vestir(Aparencia.minha())
 	if Rede.modo == "cliente":
+		var minha_aparencia := Aparencia.codificar(carro.aparencia)
+		Rede.enviar(func() -> void: Rede.receber_aparencia.rpc_id(1, minha_aparencia))
 		bola.freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
 		bola.freeze = true
 		# a bola e os outros carros só aparecem onde o host manda: o meu carro passa por eles aqui,
@@ -111,6 +114,9 @@ func _ready() -> void:
 		multiplayer.peer_connected.connect(jogador_entrou)
 		multiplayer.peer_disconnected.connect(jogador_saiu)
 		Rede.comandos_chegaram.connect(comandos_chegaram)
+		Rede.aparencia_chegou.connect(func(id: int, codigo: int) -> void:
+			if carros.has(id):
+				carros[id].vestir(Aparencia.decodificar(codigo)))
 	saida_de_bola()
 
 
@@ -334,6 +340,7 @@ func adicionar_bot(nivel: int) -> void:
 	novo.position = Vector3(0, ALTURA_CARRO, -42)
 	get_parent().add_child(novo)
 	copiar_ajustes(carro, novo)
+	novo.vestir(Aparencia.aleatoria())
 	times[ID_BOT] = "laranja"
 	carros[ID_BOT] = novo
 	novo.definir_time("laranja")
@@ -408,7 +415,7 @@ func montar_estado(comandos_do_estado: Dictionary) -> Array:
 	var lista := []
 	for id in carros:
 		var c: RigidBody3D = carros[id]
-		lista.append([id, times[id], c.global_position, c.global_basis.get_rotation_quaternion(), c.linear_velocity, c.boost, c.boostando, c.supersonico, c.comandos.direcao, c.angular_velocity, comandos_do_estado.get(id, -1), c.travado, c.explodido])
+		lista.append([id, times[id], c.global_position, c.global_basis.get_rotation_quaternion(), c.linear_velocity, c.boost, c.boostando, c.supersonico, c.comandos.direcao, c.angular_velocity, comandos_do_estado.get(id, -1), c.travado, c.explodido, Aparencia.codificar(c.aparencia)])
 	var acesos := 0
 	for i in pads.size():
 		if pads[i]["brilho"].visible:
@@ -511,6 +518,8 @@ func aplicar_estado(a: Array, b: Array, t: float) -> void:
 			continue
 		var db: Array = em_b.get(id, da)
 		var c := carro_do_jogador(id, db[1])
+		if db.size() > 13 and db[13] != Aparencia.codificar(c.aparencia):
+			c.vestir(Aparencia.decodificar(db[13]))
 		if db[12] != c.explodido:
 			if db[12]:
 				c.explodir()

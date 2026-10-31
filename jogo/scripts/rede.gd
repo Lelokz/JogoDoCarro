@@ -11,6 +11,7 @@ const MAXIMO_JOGADORES := 6   # 3 contra 3
 signal comandos_chegaram(id: int, dados: Array)
 signal estado_chegou(dados: Array)
 signal ajustes_chegaram(dados: Dictionary)
+signal aparencia_chegou(id: int, codigo: int)
 
 var modo := "sozinho"   # "sozinho", "host" ou "cliente"
 var aviso := ""         # recado pro menu (ex.: "o host fechou a partida")
@@ -166,3 +167,9 @@ func receber_estado(dados: Array) -> void:
 func receber_ajustes(dados: Dictionary) -> void:
 	ajustes_do_host = dados
 	ajustes_chegaram.emit(dados)
+
+
+@rpc("any_peer", "call_remote", "reliable", 2)
+func receber_aparencia(codigo: int) -> void:
+	# quem entrou conta pro host como personalizou o carro (o host repassa no estado)
+	aparencia_chegou.emit(multiplayer.get_remote_sender_id(), codigo)

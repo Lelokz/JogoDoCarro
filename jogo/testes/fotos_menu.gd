@@ -34,6 +34,29 @@ func _process(_delta: float) -> bool:
 		menu.mostrar(menu.escolha_solo)
 	if pronto_em > 0 and quadro == pronto_em + 245:
 		foto("m5_jogar_solo")
+		menu.mostrar(menu.inicio)
+		menu.abrir_personalizar()
+	if pronto_em > 0 and quadro == pronto_em + 330:
+		foto("m6_personalizar")
+		var t: Node = menu.tela_personalizar
+		t.escolher("detalhe", 3)
+		t.escolher("fogo", 1)
+		t.escolher("enfeite", 2)
+	if pronto_em > 0 and quadro == pronto_em + 360:
+		foto("m7_personalizado")
+		var t: Node = menu.tela_personalizar
+		t.time = "laranja"
+		t.pintar_time()
+		t.escolher("detalhe", 2)
+		t.escolher("fogo", 3)
+		t.escolher("rastro", 2)
+		t.escolher("enfeite", 1)
+	if pronto_em > 0 and quadro == pronto_em + 372:
+		foto("m8_antena_fumaca")
+		menu.tela_personalizar.escolher("enfeite", 3)
+		menu.tela_personalizar.escolher("rastro", 1)
+	if pronto_em > 0 and quadro == pronto_em + 386:
+		foto("m9_aerofolio_faiscas")
 		return true
 	return quadro > 3000
 
