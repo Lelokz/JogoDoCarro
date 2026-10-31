@@ -94,7 +94,7 @@ var tempo_mortal := -1.0   # -1 = não está no mortal
 var direcao_mortal := Vector2.ZERO
 var tempo_desvirando := 0.0
 var eixo_desvirar := Vector3.ZERO
-var rastro: CPUParticles3D
+var chama := Boost.new()   # o efeito do boost, no escapamento (estilo e cor do Personalizar)
 var teleportou := true   # quadro depois de um teleporte (e de nascer): a mola mudar de uma vez não conta como pancada
 var explodido := false   # demolido: some por uns segundos e volta perto do próprio gol
 var tinta := ModeloCarro.pintura(Color(0.2, 0.45, 0.95))   # cada carro tem a sua (cor do time)
@@ -114,7 +114,7 @@ func _ready() -> void:
 	inertia = ModeloCarro.INERCIA
 	for enfeite in [teto, antena, aerofolio]:
 		$Corpo.add_child(enfeite)
-	criar_rastro()
+	add_child(chama)
 	vestir(aparencia)
 	# pra partida saber em quem o carro bateu (demolição)
 	contact_monitor = true
@@ -139,7 +139,7 @@ func _physics_process(delta: float) -> void:
 			pedido_voltar = true
 	else:
 		estimar_rodas()
-	rastro.emitting = boostando
+	chama.ligado = boostando
 	turbina.set_shader_parameter("forca_brilho", 4.0 if boostando else 0.5)
 	atualizar_rodas_desenhadas(delta)
 
@@ -458,7 +458,7 @@ func vestir(escolha: Dictionary) -> void:
 	tinta.set_shader_parameter("cor_faixas", Color(cor_detalhe, 1.0 if aparencia.desenho == 1 else 0.0))
 	var fogo: Color = Aparencia.CORES_FOGO[aparencia.boost_cor][1]
 	turbina.set_shader_parameter("brilho", fogo)
-	montar_rastro(aparencia.boost, fogo)
+	chama.montar(aparencia.boost, fogo)
 	# modelo: desenho, rodas e (como no Rocket League) caixa de batida e lugar das rodas
 	var d := ModeloCarro.dados(aparencia.modelo)
 	$Forma.shape.size = d.caixa
@@ -469,7 +469,7 @@ func vestir(escolha: Dictionary) -> void:
 		var pneu: MeshInstance3D = rodas[i].get_node("Pneu")
 		pneu.mesh = ModeloCarro.roda(aparencia.modelo, i >= 2)
 		usar_materiais(pneu)
-	rastro.position = d.turbina
+	chama.position = d.turbina
 	$Corpo.mesh = ModeloCarro.corpo(aparencia.modelo, aparencia.aerofolio > 0)
 	usar_materiais($Corpo)
 	teto.mesh = ModeloCarro.enfeite(2 if aparencia.teto > 0 else 0)
@@ -552,68 +552,6 @@ func curva(tabela: Array, x: float) -> float:
 			var b: Array = tabela[i]
 			return lerpf(a[1], b[1], (x - a[0]) / (b[0] - a[0]))
 	return tabela[-1][1]
-
-
-func criar_rastro() -> void:
-	rastro = CPUParticles3D.new()
-	rastro.emitting = false
-	rastro.local_coords = false
-	rastro.direction = Vector3.BACK
-	var bolinha := SphereMesh.new()
-	bolinha.radius = 0.09
-	bolinha.height = 0.18
-	bolinha.radial_segments = 8
-	bolinha.rings = 4
-	bolinha.material = Materiais.rastro()
-	rastro.mesh = bolinha
-	add_child(rastro)
-
-
-func montar_rastro(tipo: int, fogo: Color) -> void:
-	# fogo: bolinhas rápidas e curtas · faíscas: pontinhos que caem · fumaça: nuvem que cresce e fica
-	var cores := Gradient.new()
-	rastro.scale_amount_curve = null
-	match tipo:
-		1:
-			rastro.amount = 70
-			rastro.lifetime = 0.5
-			rastro.spread = 22.0
-			rastro.initial_velocity_min = 4.0
-			rastro.initial_velocity_max = 8.0
-			rastro.gravity = Vector3(0, -9.0, 0)
-			rastro.scale_amount_min = 0.2
-			rastro.scale_amount_max = 0.4
-			cores.set_color(0, Color(fogo.lerp(Color.WHITE, 0.3) * 2.5, 1.0))
-			cores.set_color(1, Color(fogo * 1.5, 0.0))
-		2:
-			rastro.amount = 60
-			rastro.lifetime = 0.9
-			rastro.spread = 12.0
-			rastro.initial_velocity_min = 1.5
-			rastro.initial_velocity_max = 3.0
-			rastro.gravity = Vector3(0, 0.8, 0)
-			rastro.scale_amount_min = 0.7
-			rastro.scale_amount_max = 1.0
-			var crescer := Curve.new()
-			crescer.max_value = 3.0
-			crescer.add_point(Vector2(0.0, 0.6))
-			crescer.add_point(Vector2(1.0, 2.6))
-			rastro.scale_amount_curve = crescer
-			cores.set_color(0, Color(fogo.lerp(Color.WHITE, 0.4) * 1.6, 1.0))
-			cores.set_color(1, Color(0.3, 0.3, 0.33, 0.0))
-			cores.add_point(0.25, Color(0.55, 0.55, 0.58, 0.45))
-		_:
-			rastro.amount = 80
-			rastro.lifetime = 0.35
-			rastro.spread = 8.0
-			rastro.initial_velocity_min = 3.0
-			rastro.initial_velocity_max = 5.0
-			rastro.gravity = Vector3.ZERO
-			rastro.scale_amount_min = 0.6
-			rastro.scale_amount_max = 1.0
-			cores.set_color(0, Color(fogo.lerp(Color(1.0, 0.95, 0.6), 0.6), 1.0))
-			cores.set_color(1, Color(fogo.darkened(0.2), 0.0))
-	rastro.color_ramp = cores
 
 
 func atualizar_rodas_desenhadas(delta: float) -> void:

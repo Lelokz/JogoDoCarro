@@ -69,8 +69,12 @@ static func transparente(cor: Color) -> ShaderMaterial:
 	return m
 
 
-static func rastro() -> ShaderMaterial:
-	return novo(TRANSPARENTE, 2)
+static func rastro(forca_luz := 1.0, suave := 0.0) -> ShaderMaterial:
+	# partículas e chamas: a cor de cada uma (dos vértices) brilha sozinha; suave = borda esfumaçada
+	var m := novo(TRANSPARENTE, 2)
+	m.set_shader_parameter("forca_luz", forca_luz)
+	m.set_shader_parameter("suave", suave)
+	return m
 
 
 static func novo(shader: Shader, tipo: int) -> ShaderMaterial:

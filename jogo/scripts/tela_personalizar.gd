@@ -326,7 +326,7 @@ func _process(delta: float) -> void:
 	tempo += delta
 	# na aba do boost, o boost fica ligado pra ver
 	var boostando := aba == "boost"
-	carro.rastro.emitting = boostando
+	carro.chama.ligado = boostando
 	carro.turbina.set_shader_parameter("forca_brilho", 4.0 if boostando else 0.5)
 	if salvo_ate > 0.0 and tempo > salvo_ate:
 		salvo_ate = 0.0
@@ -334,7 +334,7 @@ func _process(delta: float) -> void:
 
 
 func sair() -> void:
-	carro.rastro.emitting = false
+	carro.chama.ligado = false
 	carro.turbina.set_shader_parameter("forca_brilho", 0.5)
 	carro.vestir(Aparencia.minha())
 	fechou.emit()

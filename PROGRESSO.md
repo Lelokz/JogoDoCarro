@@ -11,6 +11,17 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 31/10/2026 (tarde): Personalização, etapa 2 — boost de verdade
+- O boost virou uma peça própria (`scripts/boost.gd`, `carro.chama`) presa no escapamento de cada modelo.
+- 7 estilos, cada um com a cor escolhida (12 cores): **Fogo** (3 cones de chama encaixados que tremem —
+  miolo claro, corpo na cor, ponta avermelhada — mais línguas de fogo esticadas e faíscas), **Faíscas**,
+  **Fumaça preta** (miolo de fogo e nuvem escura que cresce), **Plasma** (feixe fino, anéis saindo e
+  bolinhas), **Laser** (dois feixes), **Estrelinhas** (estrelas girando) e **Arco-íris** (ignora a cor).
+- Mesmo shader do rastro, com 3 ajustes novos: força da luz (as malhas não guardam cor acima de 1),
+  transparência e **borda esfumaçada** (antes cada bolinha tinha borda dura e juntas pareciam espuma).
+- Várias rodadas de foto (`testes/fotos_boost.gd`): no começo tudo estourava pro branco no brilho; baixei
+  a força e passei o fogo de "bolinhas" pra cones + línguas.
+
 ## 31/10/2026 (tarde): Personalização nova, etapa 1 de 6 (salvar de verdade + tela tipo garagem)
 Plano aprovado por ele (6 etapas): 1 salvar + tela nova · 2 boost de verdade (fogo, plasma, laser...) ·
 3 rastro das RODAS no drift (marca de pneu, fumaça, neon...) — rastro ≠ boost · 4 acessórios bem feitos

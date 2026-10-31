@@ -45,7 +45,7 @@ const CORES_FOGO := [
 	["Magenta", Color(1.0, 0.1, 0.9)],
 ]
 const DESENHOS := ["Nenhum", "Faixas"]
-const BOOSTS := ["Fogo", "Faíscas", "Fumaça"]
+const BOOSTS := ["Fogo", "Faíscas", "Fumaça preta", "Plasma", "Laser", "Estrelinhas", "Arco-íris"]
 const TETOS := ["Nenhum", "Cartola"]
 const ANTENAS := ["Nenhuma", "Bandeira do time"]
 const AEROFOLIOS := ["De fábrica", "Corrida"]

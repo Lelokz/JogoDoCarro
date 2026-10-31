@@ -14,6 +14,10 @@ uniform float altura_solida = 2.4;
 uniform float altura_vidro = 3.2;
 uniform float altura_faixa = 3.0;
 uniform float altura_teto = 20.0;
+// rastro: as malhas (chama do boost) não guardam cor acima de 1 nos vértices; isto faz brilhar
+uniform float forca_luz = 1.0;
+uniform float alfa = 1.0;
+uniform float suave = 0.0;   // 1 = borda esfumaçada
 
 varying vec4 cor_do_vertice;
 
@@ -59,8 +63,10 @@ void fragment() {
 		ALPHA = mix(cor.a, 0.9, fios);
 	} else {
 		ALBEDO = vec3(0.0);
-		EMISSION = cor_do_vertice.rgb;
-		ALPHA = cor_do_vertice.a;
+		EMISSION = cor_do_vertice.rgb * forca_luz;
+		// borda esfumaçada (fogo, fumaça): de frente é cheio, na beirada some
+		float frente = abs(dot(normalize(NORMAL), VIEW));
+		ALPHA = clamp(cor_do_vertice.a * alfa * mix(1.0, frente * frente, suave), 0.0, 1.0);
 	}
 	NORMAL = normal_certa(VIEW_MATRIX);
 }

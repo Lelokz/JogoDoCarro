@@ -337,12 +337,12 @@ func virar_vitrine() -> void:
 		camada.visible = false
 	carro = arena.get_node("Carro")
 	carro.boostando = false
-	carro.rastro.emitting = false
+	carro.chama.ligado = false
 	carro.process_mode = Node.PROCESS_MODE_DISABLED
 	altura_carro = carro.global_position.y if carro.global_position.y > 0.2 else 0.32
 	carro.vestir(Aparencia.minha())
 	assentar_rodas()
-	carro.rastro.process_mode = Node.PROCESS_MODE_ALWAYS   # o carro está parado, mas o boost aparece no Personalizar
+	carro.chama.process_mode = Node.PROCESS_MODE_ALWAYS   # o carro está parado, mas o boost aparece no Personalizar
 	podio.mesh = malha_podio()
 	podio.visible = false
 	arena.add_child(podio)
