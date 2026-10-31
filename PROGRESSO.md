@@ -26,7 +26,7 @@ Plano aprovado por ele (6 etapas): 1 salvar + tela nova · 2 boost de verdade (f
 - **Tela tipo garagem:** abas na esquerda (as que ainda não têm nada aparecem "em breve"), cartões na
   direita com rolagem pela rodinha, carro parado no meio com a câmera girando em volta (arrastar gira,
   rodinha aproxima), cada aba leva a câmera pro lugar certo (rodas de lado, boost por trás, teto de cima);
-  na aba do boost ele fica ligado. Embaixo: ver azul/laranja, ALEATÓRIO, DESFAZER, PRONTO.
+  na aba do boost ele fica ligado. Embaixo: ver azul/laranja, DESFAZER, PRONTO (o ALEATÓRIO saiu: ele não gostou).
 - Aerofólio "Corrida" desenhado pra cada carro (Raio pescoço de cisne, Tanque spoiler de teto, Besouro rabo
   de baleia, Flecha asa grande no lugar da de fábrica): nunca fica com duas asas. Vai ser refinado na etapa 4.
 

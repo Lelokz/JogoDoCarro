@@ -137,13 +137,12 @@ func montar_barra() -> void:
 	var espaco := Control.new()
 	espaco.custom_minimum_size.x = 18
 	barra.add_child(espaco)
-	var aleatorio := Estilo.botao("ALEATÓRIO", func() -> void: trocar_tudo(Aparencia.aleatoria()), 54)
 	var desfazer := Estilo.botao("DESFAZER", func() -> void: trocar_tudo(inicial.duplicate()), 54)
 	var pronto := Estilo.botao("PRONTO", sair, 54)
 	pronto.add_theme_stylebox_override("normal", Estilo.caixa(Color(0.95, 0.45, 0.1, 0.95), Color(1, 0.8, 0.5, 0.6), 10, 1))
 	pronto.add_theme_stylebox_override("hover", Estilo.caixa(Color(1.0, 0.58, 0.2, 1.0), Color.WHITE, 10, 2))
 	pronto.add_theme_stylebox_override("pressed", Estilo.caixa(Color(0.85, 0.38, 0.08, 1.0), Color.WHITE, 10, 2))
-	for b in [aleatorio, desfazer, pronto]:
+	for b in [desfazer, pronto]:
 		b.custom_minimum_size.x = 150
 		b.add_theme_font_override("font", Estilo.titulo())
 		barra.add_child(b)
