@@ -35,6 +35,13 @@ const ATRASO_IMAGEM := 6.0
 const FRACAO_CORRECAO := 0.3   # quanto da diferença pro host corrige por estado que chega
 const ERRO_TELEPORTE := 4.0    # m: mais que isso (ex.: saída de bola) corrige de uma vez
 const TEMPO_AJUSTES := 2.0     # s entre um envio e outro dos ajustes do carro
+# demolição: carro supersônico batendo num adversário (indo na direção dele a mais que isso) explode ele
+const VELOCIDADE_DEMOLIR := 10.0   # m/s
+const TEMPO_DEMOLIDO := 3.0        # s até voltar, perto do próprio gol
+const VOLTAS := [Vector3(-10, 0, 46), Vector3(10, 0, 46), Vector3(0, 0, 47)]   # lado do azul (o laranja é espelhado)
+# explosão do gol: empurra os carros perto, mais forte quanto mais rápida a bola entrou
+const RAIO_EXPLOSAO_GOL := 24.0    # m
+const EMPURRAO_GOL := 22.0         # m/s pra quem está colado na bola
 
 enum Estado { CONTAGEM, JOGANDO, GOL, FIM }
 
@@ -51,6 +58,11 @@ var acabou := false
 var placar := {"azul": 0, "laranja": 0}
 var texto_placar := ""
 var pads := []
+var voltam_em := {}            # id do jogador demolido → quando ele volta (tempo_total)
+var velocidades_antes := {}    # id → [velocidade, supersônico] do quadro anterior (a batida já freou)
+var explosoes := []            # as últimas explosões [número, onde, cor, tamanho]: vão pros amigos
+var numero_explosao := 0
+var explosao_vista := -1       # amigo: a última explosão que já apareceu aqui
 var tempo_total := 0.0
 var estados_recebidos := []
 var quadro_imagem := -1.0
@@ -116,6 +128,7 @@ func _physics_process(delta: float) -> void:
 	tempo_estado += delta
 	tempo_total += delta
 	atualizar_pads()
+	reviver_demolidos()
 	match estado:
 		Estado.CONTAGEM:
 			var falta := TEMPO_CONTAGEM - tempo_estado
@@ -131,6 +144,7 @@ func _physics_process(delta: float) -> void:
 				mensagem("")
 			if not prorrogacao:
 				relogio = maxf(relogio - delta, 0.0)
+			ver_demolicoes()
 			ver_gol()
 			if estado == Estado.JOGANDO and relogio <= 0.0 and not prorrogacao:
 				acabar_tempo()
@@ -160,6 +174,7 @@ func ver_gol() -> void:
 	if absf(b.x) > Arena.GOL_LARGURA / 2.0 or b.y > Arena.GOL_ALTURA or absf(b.z) < Arena.COMPRIMENTO / 2.0 + RAIO_BOLA:
 		return
 	var time := "azul" if b.z < 0.0 else "laranja"
+	explodir_gol(b, time)
 	placar[time] += 1
 	acabou = prorrogacao
 	estado = Estado.GOL
@@ -167,6 +182,65 @@ func ver_gol() -> void:
 	mensagem("GOL DO %s!" % time.to_upper())
 	bola.visible = false
 	bola.freeze = true
+
+
+func explodir_gol(onde: Vector3, time: String) -> void:
+	var forca := clampf(bola.linear_velocity.length() / 30.0, 0.5, 1.4)
+	nova_explosao(onde, Arena.COR_AZUL if time == "azul" else Arena.COR_LARANJA, 2.5 * forca)
+	for c in carros.values():
+		if c.explodido:
+			continue
+		var dif: Vector3 = c.global_position - onde
+		var distancia := dif.length()
+		if distancia > RAIO_EXPLOSAO_GOL:
+			continue
+		var perto := 1.0 - distancia / RAIO_EXPLOSAO_GOL
+		var direcao := (dif.normalized() + Vector3.UP * 0.5).normalized()
+		c.linear_velocity += direcao * EMPURRAO_GOL * forca * perto
+		c.angular_velocity += Vector3(randf_range(-3, 3), randf_range(-3, 3), randf_range(-3, 3)) * perto
+
+
+func ver_demolicoes() -> void:
+	# de frente com os dois supersônicos, explodem os dois (por isso junta primeiro e explode depois)
+	var demolir := []
+	for id in carros:
+		var a: RigidBody3D = carros[id]
+		var antes: Array = velocidades_antes.get(id, [Vector3.ZERO, false])
+		if a.explodido or not antes[1]:
+			continue
+		for outro in a.get_colliding_bodies():
+			var id_outro = carros.find_key(outro)
+			if id_outro == null or times.get(id_outro) == times.get(id) or outro.explodido:
+				continue
+			var para_ele: Vector3 = (outro.global_position - a.global_position).normalized()
+			if antes[0].dot(para_ele) > VELOCIDADE_DEMOLIR and not demolir.has(id_outro):
+				demolir.append(id_outro)
+	for id in demolir:
+		var c: RigidBody3D = carros[id]
+		nova_explosao(c.global_position, Arena.COR_AZUL if times[id] == "azul" else Arena.COR_LARANJA, 1.0)
+		c.explodir()
+		voltam_em[id] = tempo_total + TEMPO_DEMOLIDO
+	velocidades_antes.clear()
+	for id in carros:
+		velocidades_antes[id] = [carros[id].linear_velocity, carros[id].supersonico]
+
+
+func reviver_demolidos() -> void:
+	for id in voltam_em.keys():
+		if not carros.has(id):
+			voltam_em.erase(id)
+		elif tempo_total >= voltam_em[id]:
+			voltam_em.erase(id)
+			carros[id].reviver()
+			colocar_na_saida(carros[id], times[id], VOLTAS.pick_random())
+
+
+func nova_explosao(onde: Vector3, cor: Color, tamanho: float) -> void:
+	numero_explosao += 1
+	explosoes.append([numero_explosao, onde, cor, tamanho])
+	if explosoes.size() > 4:
+		explosoes.pop_front()
+	Explosao.criar(get_parent(), onde, cor, tamanho)
 
 
 func acabar_tempo() -> void:
@@ -199,8 +273,11 @@ func saida_de_bola() -> void:
 	var lugares := SAIDAS.duplicate()
 	lugares.shuffle()
 	var quantos := {"azul": 0, "laranja": 0}
+	voltam_em.clear()
 	for id in carros:
 		var time: String = times[id]
+		if carros[id].explodido:
+			carros[id].reviver()
 		colocar_na_saida(carros[id], time, lugares[quantos[time] % lugares.size()])
 		quantos[time] += 1
 		carros[id].travado = true
@@ -307,21 +384,28 @@ func montar_estado(comandos_do_estado: Dictionary) -> Array:
 	var lista := []
 	for id in carros:
 		var c: RigidBody3D = carros[id]
-		lista.append([id, times[id], c.global_position, c.global_basis.get_rotation_quaternion(), c.linear_velocity, c.boost, c.boostando, c.supersonico, c.comandos.direcao, c.angular_velocity, comandos_do_estado.get(id, -1), c.travado])
+		lista.append([id, times[id], c.global_position, c.global_basis.get_rotation_quaternion(), c.linear_velocity, c.boost, c.boostando, c.supersonico, c.comandos.direcao, c.angular_velocity, comandos_do_estado.get(id, -1), c.travado, c.explodido])
 	var acesos := 0
 	for i in pads.size():
 		if pads[i]["brilho"].visible:
 			acesos |= 1 << i
 	var dados_bola := [bola.global_position, bola.global_basis.get_rotation_quaternion(), bola.linear_velocity, bola.visible]
-	return [Engine.get_physics_frames(), lista, dados_bola, texto_placar, hud.get_node("Mensagem").text, acesos]
+	return [Engine.get_physics_frames(), lista, dados_bola, texto_placar, hud.get_node("Mensagem").text, acesos, explosoes]
 
 
 func estado_chegou(dados: Array) -> void:
 	if not estados_recebidos.is_empty() and dados[0] <= estados_recebidos[-1][0]:
 		return
+	var primeiro := estados_recebidos.is_empty()
 	estados_recebidos.append(dados)
 	if estados_recebidos.size() > 30:
 		estados_recebidos.pop_front()
+	# explosões novas (as de antes de eu entrar não aparecem)
+	for e in dados[6]:
+		if e[0] > explosao_vista:
+			explosao_vista = e[0]
+			if not primeiro:
+				Explosao.criar(get_parent(), e[1], e[2], e[3])
 	corrigir_meu_carro(dados)
 
 
@@ -331,6 +415,11 @@ func corrigir_meu_carro(dados: Array) -> void:
 		if meu[0] != eu:
 			continue
 		carro.travado = meu[11]
+		if meu[12] != carro.explodido:
+			if meu[12]:
+				carro.explodir()
+			else:
+				carro.reviver()
 		var numero: int = meu[10]
 		if not historico.has(numero):
 			return
@@ -398,6 +487,11 @@ func aplicar_estado(a: Array, b: Array, t: float) -> void:
 			continue
 		var db: Array = em_b.get(id, da)
 		var c := carro_do_jogador(id, db[1])
+		if db[12] != c.explodido:
+			if db[12]:
+				c.explodir()
+			else:
+				c.reviver()
 		var posicao: Vector3 = da[2].lerp(db[2], t)
 		var pulou_longe := c.global_position.distance_to(posicao) > 5.0
 		c.global_transform = Transform3D(Basis(da[3].slerp(db[3], t)), posicao)
@@ -534,7 +628,7 @@ func atualizar_pads() -> void:
 			continue
 		for c in carros.values():
 			var p: Vector3 = c.global_position
-			if c.boost >= 100.0 or p.y > 2.5:
+			if c.boost >= 100.0 or p.y > 2.5 or c.explodido:
 				continue
 			if Vector2(p.x, p.z).distance_to(pad["onde"]) < pad["raio"]:
 				c.boost = minf(c.boost + pad["quanto"], 100.0)

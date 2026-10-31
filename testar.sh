@@ -10,3 +10,5 @@ echo "== Bola: quique, rolagem, batidas"
 nice -n 19 $GODOT --headless --fixed-fps 120 --path jogo -s res://testes/teste_bola.gd 2>&1 | grep -v '^Godot Engine'
 echo "== Arena: saída de bola, parede, gols, pads, prorrogação"
 nice -n 19 $GODOT --headless --fixed-fps 120 --path jogo -s res://testes/teste_arena.gd 2>&1 | grep -v '^Godot Engine'
+echo "== Explosões: demolição, volta do demolido, explosão do gol"
+nice -n 19 $GODOT --headless --fixed-fps 120 --path jogo -s res://testes/teste_explosoes.gd 2>&1 | grep -v '^Godot Engine'

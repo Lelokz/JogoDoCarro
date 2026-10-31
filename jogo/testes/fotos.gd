@@ -14,6 +14,7 @@ const FOTOS := [
 	["6_gol", Vector3(9, 4, 30), Vector3(0, 3, 50)],
 	["7_arquibancada", Vector3(-10, 3, 5), Vector3(40, 14, 20)],
 	["1b_hud_rapido", "hud", null],
+	["1c_explosao_gol", "explosao", null],
 	["8_pausa", "pausa", null],
 	["9_opcoes", "opcoes", null],
 ]
@@ -38,12 +39,18 @@ func _process(_delta: float) -> bool:
 		return false
 	if foto > 0:
 		root.get_viewport().get_texture().get_image().save_png("%s/%s.png" % [pasta, FOTOS[foto - 1][0]])
+	Engine.time_scale = 1.0
 	if foto == FOTOS.size():
 		return true
 	var f: Array = FOTOS[foto]
 	if f[1] is String:
 		root.get_node("Arena/Camera").make_current()
-		if f[1] == "hud":
+		if f[1] == "explosao":
+			camera.make_current()
+			camera.look_at_from_position(Vector3(9, 3.5, 12), Vector3(0, 2, 0))
+			load("res://scripts/explosao.gd").criar(root.get_node("Arena"), Vector3(0, 1.5, 0), Color(1.0, 0.5, 0.1), 2.5)
+			Engine.time_scale = 0.03   # câmera lenta: sem placa de vídeo cada quadro demora e a explosão acabava antes da foto
+		elif f[1] == "hud":
 			# só os números do mostrador (o carro está parado na contagem)
 			var hud: Node = root.get_node("Arena/Hud")
 			hud.set_process(false)

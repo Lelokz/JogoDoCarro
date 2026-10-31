@@ -11,6 +11,33 @@ Diário do projeto. O mais novo fica em cima.
 - Código no GitHub: https://github.com/Lelokz/JogoDoCarro (nome provisório). Commit + push a cada etapa.
 - **Site do jogo: https://rocketwar-2a302.web.app** (Firebase da outra conta Google). `./publicar_site.sh` gera e publica (site + regras do banco das salas); `./publicar_site.sh teste` só gera e abre em http://127.0.0.1:8099.
 
+## 31/10/2026 (noite): pausa, opções, HUD, menu novo e explosões
+Tu aprovou a ordem e foi dormir; cada passo foi publicado e o print foi pro teu WhatsApp.
+- **Pausa no ESC:** continuar / opções / voltar pro menu. Sozinho o jogo para; online segue por trás
+  (e o teu carro fica solto enquanto a telinha está aberta).
+- **Opções** (a mesma no menu e na pausa, salva no navegador de cada um): campo de visão, distância e
+  altura da câmera; gráficos baixo/médio/alto (baixo = sem sombra, brilho e névoa, resolução 75%);
+  mostrar FPS; tela cheia; lista de controles. A câmera saiu do F1 (o F1 continua só do host, pra física).
+- A interface agora acompanha o tamanho da janela.
+- **HUD:** velocímetro com ponteiro (fica laranja e escreve SUPERSÔNICO), boost num anel com o número no
+  meio, placar azul × laranja em cima. Os números de teste só aparecem com o F1 aberto.
+- **Menu novo:** a arena que já carregava (pra preparar os shaders) vira o fundo: carro girando no meio do
+  campo trocando de azul pra laranja, bola atrás, estádio. Botões: JOGAR SOLO, CRIAR SALA, código, CAMPO
+  DE TESTE, OPÇÕES.
+- **Explosões** (o host decide, os amigos recebem pela rede):
+  - Demolição: carro supersônico que bate num adversário (indo na direção dele a mais de 10 m/s) explode
+    ele; de frente os dois supersônicos, explodem os dois; mesmo time não explode. O demolido volta em
+    3 s perto do próprio gol, com 33 de boost.
+  - Gol: explosão na cor de quem marcou, que joga longe os carros num raio de 24 m (mais forte quanto mais
+    rápida a bola entrou).
+  - Teste novo: `teste_explosoes.gd` (entra no `./testar.sh`).
+- **Bug antigo achado no caminho:** quando um carro era teleportado (voltar da demolição, tecla T,
+  correção grande da rede) ou recém-criado, o amortecedor achava que tinha levado uma pancada e jogava o
+  carro uns 3 m/s pra cima. Corrigido. Os números de todos os testes antigos ficaram iguais, e no teste
+  de rede a maior diferença entre o carro do amigo e o host caiu de 17 cm pra 1,2 cm.
+- `./tirar_fotos.sh PASTA` também fotografa o menu, a pausa, as opções e uma explosão.
+- **Pendente:** pulo duplo (o teu amigo explica amanhã o que é o "fixo"); bot com fácil/médio/difícil.
+
 ## 31/10/2026: visual novo (carro, bola e estádio)
 - Pedido teu: "deixar o jogo parecendo de profissional". **Só a aparência mudou:** as caixas de colisão
   do carro, da bola e da arena são as mesmas, então a física que tu aprovou continua igual.

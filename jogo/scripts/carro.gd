@@ -95,6 +95,8 @@ var direcao_mortal := Vector2.ZERO
 var tempo_desvirando := 0.0
 var eixo_desvirar := Vector3.ZERO
 var rastro: CPUParticles3D
+var teleportou := true   # quadro depois de um teleporte (e de nascer): a mola mudar de uma vez não conta como pancada
+var explodido := false   # demolido: some por uns segundos e volta perto do próprio gol
 var tinta := ModeloCarro.pintura(Color(0.2, 0.45, 0.95))   # cada carro tem a sua (cor do time)
 var turbina := ModeloCarro.turbina()                      # e a sua turbina (acende no boost)
 
@@ -112,6 +114,9 @@ func _ready() -> void:
 	for roda in rodas:
 		roda.get_node("Pneu").mesh = ModeloCarro.roda()
 	criar_rastro()
+	# pra partida saber em quem o carro bateu (demolição)
+	contact_monitor = true
+	max_contacts_reported = 4
 
 
 func _physics_process(delta: float) -> void:
@@ -201,12 +206,15 @@ func ler_suspensao(estado: PhysicsDirectBodyState3D, dt: float) -> void:
 		rodas_no_chao += 1
 		soma_normais += toque.normal
 		compressao[i] = alcance - origem.distance_to(toque.position)
-		var velocidade_compressao: float = (compressao[i] - anterior) / dt
+		# depois de um teleporte a mola pula de solta pra apertada num quadro só: o amortecedor
+		# achava que foi uma pancada fortíssima e jogava o carro pra cima (~3 m/s)
+		var velocidade_compressao: float = 0.0 if teleportou else (compressao[i] - anterior) / dt
 		var forca := maxf(mola * compressao[i] + amortecedor * velocidade_compressao, 0.0)
 		if compressao[i] > curso_mola:
 			forca += batente * (compressao[i] - curso_mola)
 		estado.apply_force(cima * forca, origem - estado.transform.origin)
 
+	teleportou = false
 	if rodas_no_chao > 0:
 		normal_chao = soma_normais.normalized()
 
@@ -390,6 +398,8 @@ func corrigir(posicao: Vector3, rotacao: Quaternion, velocidade_: Vector3, giro:
 
 
 func aplicar_correcao(estado: PhysicsDirectBodyState3D) -> void:
+	if correcao_posicao.length() > 0.5:
+		teleportou = true
 	var t := estado.transform
 	t.origin += correcao_posicao
 	t.basis = Basis(correcao_rotacao) * t.basis.orthonormalized()
@@ -405,6 +415,27 @@ func aplicar_correcao(estado: PhysicsDirectBodyState3D) -> void:
 
 func velocidade() -> Vector3:
 	return linear_velocity if simulando else velocidade_rede
+
+
+func explodir() -> void:
+	# some, para de bater nas coisas e fica parado onde explodiu até voltar
+	explodido = true
+	visible = false
+	boostando = false
+	$Forma.set_deferred("disabled", true)
+	if simulando:
+		set_deferred("freeze", true)
+
+
+func reviver(onde := Transform3D()) -> void:
+	# onde = Transform3D() quando quem decide o lugar é o host (o amigo só volta a aparecer)
+	explodido = false
+	visible = true
+	$Forma.set_deferred("disabled", false)
+	if simulando:
+		set_deferred("freeze", false)
+	if onde != Transform3D():
+		colocar_em(onde)
 
 
 func definir_simulacao(ligada: bool) -> void:
@@ -464,6 +495,7 @@ func reposicionar(estado: PhysicsDirectBodyState3D) -> void:
 	tempo_desvirando = 0.0
 	pedido_voltar = false
 	pedido_desvirar = false
+	teleportou = true
 
 
 func curva(tabela: Array, x: float) -> float:
