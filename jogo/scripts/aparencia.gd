@@ -8,7 +8,8 @@ extends RefCounted
 # É só aparência: todos os carros têm a mesma física e a mesma caixa de batida.
 
 const ARQUIVO := "user://carro.json"
-const MODELOS := ["Padrão"]
+const MODELOS := ["Padrão", "Raio", "Tanque", "Besouro", "Flecha"]
+const SOBRE_MODELOS := ["Equilibrado, o de sempre", "Baixinho e largo, tipo esportivo", "Alto e quadradão, tipo jipe", "Arredondado, tipo fusquinha de corrida", "Comprido e bicudo, tipo arrancada"]
 const DETALHES := [
 	["Nenhum", Color(0.78, 0.8, 0.84)],
 	["Branco", Color(0.92, 0.93, 0.95)],

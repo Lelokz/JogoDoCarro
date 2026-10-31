@@ -107,13 +107,6 @@ var aparencia := Aparencia.PADRAO.duplicate()   # o que o dono escolheu no Perso
 func _ready() -> void:
 	add_to_group("carros")
 	ponto_inicial = global_transform
-	$Corpo.mesh = ModeloCarro.corpo()
-	for i in $Corpo.mesh.get_surface_count():
-		match $Corpo.mesh.surface_get_name(i):
-			"pintura":
-				$Corpo.set_surface_override_material(i, tinta)
-			"turbina":
-				$Corpo.set_surface_override_material(i, turbina)
 	for roda in rodas:
 		var pneu: MeshInstance3D = roda.get_node("Pneu")
 		pneu.mesh = ModeloCarro.roda()
@@ -466,14 +459,26 @@ func vestir(escolha: Dictionary) -> void:
 	var fogo: Color = Aparencia.FOGOS[aparencia.fogo][1]
 	turbina.set_shader_parameter("brilho", fogo)
 	montar_rastro(aparencia.rastro, fogo)
+	$Corpo.mesh = ModeloCarro.corpo(aparencia.modelo)
+	usar_materiais($Corpo)
 	enfeite.mesh = ModeloCarro.enfeite(aparencia.enfeite)
-	if enfeite.mesh:
-		for i in enfeite.mesh.get_surface_count():
-			match enfeite.mesh.surface_get_name(i):
-				"pintura":
-					enfeite.set_surface_override_material(i, tinta)
-				"detalhe":
-					enfeite.set_surface_override_material(i, detalhe)
+	usar_materiais(enfeite)
+	if aparencia.enfeite > 0:
+		enfeite.position.y = ModeloCarro.ALTURA_ENFEITE[aparencia.modelo][aparencia.enfeite - 1]
+
+
+func usar_materiais(malha: MeshInstance3D) -> void:
+	# os pedaços com nome de cor usam os materiais deste carro (time, fogo, detalhes)
+	if malha.mesh == null:
+		return
+	for i in malha.mesh.get_surface_count():
+		match malha.mesh.surface_get_name(i):
+			"pintura":
+				malha.set_surface_override_material(i, tinta)
+			"turbina":
+				malha.set_surface_override_material(i, turbina)
+			"detalhe":
+				malha.set_surface_override_material(i, detalhe)
 
 
 func estimar_rodas() -> void:

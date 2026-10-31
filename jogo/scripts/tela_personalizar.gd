@@ -14,6 +14,7 @@ var boost_ate := 0.0         # mostra o boost um pouco depois de trocar o fogo o
 var tempo := 0.0
 var grupos := {}             # nome da opção → [botões], pra marcar o escolhido
 var nomes := {}              # nome da opção → rótulo com o nome do escolhido
+var sobre_modelo := Label.new()
 
 
 func _ready() -> void:
@@ -56,8 +57,11 @@ func montar_carros() -> void:
 		coluna.add_child(b)
 		botoes.append(b)
 	grupos["modelo"] = botoes
-	var dica := Estilo.rotulo("mais carros chegando", 15, Estilo.TEXTO_APAGADO)
-	coluna.add_child(dica)
+	sobre_modelo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sobre_modelo.add_theme_font_size_override("font_size", 16)
+	sobre_modelo.custom_minimum_size.y = 44
+	coluna.add_child(sobre_modelo)
+	coluna.add_child(Estilo.rotulo("todos andam igual: muda só o visual", 13, Estilo.TEXTO_APAGADO))
 
 
 func montar_detalhes() -> void:
@@ -171,6 +175,8 @@ func marcar() -> void:
 				b.add_theme_stylebox_override("normal", Estilo.caixa(Color(0.16, 0.3, 0.55, 0.95), Color.WHITE, 10, 2))
 			else:
 				b.remove_theme_stylebox_override("normal")
+		if nome == "modelo":
+			sobre_modelo.text = Aparencia.SOBRE_MODELOS[atual]
 		if nomes.has(nome):
 			match nome:
 				"detalhe":

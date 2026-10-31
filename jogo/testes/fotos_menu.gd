@@ -57,6 +57,18 @@ func _process(_delta: float) -> bool:
 		menu.tela_personalizar.escolher("rastro", 1)
 	if pronto_em > 0 and quadro == pronto_em + 386:
 		foto("m9_aerofolio_faiscas")
+		menu.tela_personalizar.escolher("enfeite", 0)
+		menu.tela_personalizar.escolher("detalhe", 3)
+	# os 5 carros, de frente e de trás (o tempo do menu manda no giro)
+	for k in 10:
+		if pronto_em > 0 and quadro == pronto_em + 400 + k * 12:
+			menu.tela_personalizar.escolher("modelo", k % 5)
+		if pronto_em > 0 and quadro == pronto_em + 410 + k * 12:
+			menu.tempo = 3.6 if k < 5 else 10.5
+			menu.girar_carro()
+		if pronto_em > 0 and quadro == pronto_em + 411 + k * 12:
+			foto("c%d_%s" % [k, Aparencia.MODELOS[k % 5]])
+	if pronto_em > 0 and quadro == pronto_em + 530:
 		return true
 	return quadro > 3000
 

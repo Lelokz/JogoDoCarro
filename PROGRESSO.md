@@ -28,6 +28,10 @@ Diário do projeto. O mais novo fica em cima.
   vê o carro de cada um do jeito que ele montou. O bot sai com um visual sorteado.
 - Faixas feitas no mesmo shader do carro (nada de shader novo pro navegador compilar).
 - Teste de rede agora confere a personalização: host vê "Chapéu Azul" e "Antena Rosa" dos dois amigos.
+- **5 carros** no Personalizar: Padrão (o de sempre), Raio (baixinho e largo, rabo de pato e difusor),
+  Tanque (alto e quadradão, para-choque de impulsão, barra de luz e bagageiro), Besouro (arredondado,
+  faróis redondos, para-choques cromados) e Flecha (bico comprido, compressor no capô, escapamentos e asa
+  alta). Todos com a mesma física, rodas e caixa de batida; os enfeites sobem/descem conforme o teto.
 
 ## 31/10/2026 (noite): pausa, opções, HUD, menu novo e explosões
 Tu aprovou a ordem e foi dormir; cada passo foi publicado e o print foi pro teu WhatsApp.
