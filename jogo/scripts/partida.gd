@@ -29,6 +29,7 @@ const PADS_PEQUENOS := [
 	Vector2(-8, -42), Vector2(8, -42), Vector2(-8, 42), Vector2(8, 42),
 ]
 const CENA_CARRO := preload("res://cenas/carro.tscn")
+const ID_BOT := 1000
 # quem entrou mostra a partida um pouquinho atrás (6 quadros do host = 50 ms),
 # pra sempre ter dois estados pra misturar e o movimento ficar liso
 const ATRASO_IMAGEM := 6.0
@@ -104,6 +105,8 @@ func _ready() -> void:
 		return
 	times[eu] = "azul"
 	carro.definir_time("azul")
+	if Rede.modo == "sozinho" and Rede.bot >= 0:
+		adicionar_bot.call_deferred(Rede.bot)   # a arena ainda está se montando aqui
 	if Rede.modo == "host":
 		multiplayer.peer_connected.connect(jogador_entrou)
 		multiplayer.peer_disconnected.connect(jogador_saiu)
@@ -321,6 +324,27 @@ func jogador_entrou(id: int) -> void:
 	novo.travado = estado == Estado.CONTAGEM or estado == Estado.FIM
 	var ajustes := ajustes_atuais()
 	Rede.enviar(func() -> void: Rede.receber_ajustes.rpc_id(id, ajustes))
+
+
+func adicionar_bot(nivel: int) -> void:
+	# um adversário no laranja, dirigido pelo Bot (que aperta os comandos como um jogador)
+	var novo: RigidBody3D = CENA_CARRO.instantiate()
+	novo.name = "Carro_bot"
+	novo.controle_local = false
+	novo.position = Vector3(0, ALTURA_CARRO, -42)
+	get_parent().add_child(novo)
+	copiar_ajustes(carro, novo)
+	times[ID_BOT] = "laranja"
+	carros[ID_BOT] = novo
+	novo.definir_time("laranja")
+	colocar_na_saida(novo, "laranja", SAIDAS[0])
+	novo.travado = estado == Estado.CONTAGEM or estado == Estado.FIM
+	var bot := Bot.new()
+	bot.carro = novo
+	bot.bola = bola
+	bot.nivel = nivel
+	bot.lado = -1.0
+	add_child(bot)
 
 
 func jogador_saiu(id: int) -> void:
@@ -543,6 +567,8 @@ func carro_do_jogador(id: int, time: String) -> RigidBody3D:
 
 
 func linha_do_time() -> String:
+	if Rede.modo == "sozinho" and Rede.bot >= 0:
+		return "\ncontra o bot · %s" % Bot.NIVEIS[Rede.bot]
 	if not Rede.online():
 		return ""
 	var meu: String = times.get(multiplayer.get_unique_id(), "")

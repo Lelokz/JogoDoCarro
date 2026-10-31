@@ -15,7 +15,8 @@ signal ajustes_chegaram(dados: Dictionary)
 var modo := "sozinho"   # "sozinho", "host" ou "cliente"
 var aviso := ""         # recado pro menu (ex.: "o host fechou a partida")
 var leu_linha_de_comando := false   # o -- --hospedar / --entrar só vale quando o jogo abre
-var cena_arena: PackedScene   # carregada no menu e guardada: o "Treinar sozinho" não espera carregar
+var cena_arena: PackedScene   # carregada no menu e guardada: o "Jogar solo" não espera carregar
+var bot := -1                  # jogar solo contra o bot: 0 fácil, 1 médio, 2 difícil (-1 = sem bot)
 var ajustes_do_host := {}   # quem entrou guarda os ajustes do carro que o host mandou
 var sala: Sala   # sala com código (navegador)
 # teste: finge internet lenta segurando cada mensagem que sai (-- --atraso=60 = 60 ms)
@@ -45,8 +46,9 @@ func enviar(mensagem: Callable) -> void:
 		fila.append([Time.get_ticks_msec() / 1000.0 + atraso, mensagem])
 
 
-func treinar(cena := "res://cenas/arena.tscn") -> void:
+func treinar(cena := "res://cenas/arena.tscn", nivel_bot := -1) -> void:
 	modo = "sozinho"
+	bot = nivel_bot
 	if cena == "res://cenas/arena.tscn":
 		abrir_arena()
 	else:
@@ -61,6 +63,7 @@ func abrir_arena() -> void:
 
 
 func hospedar() -> Error:
+	bot = -1
 	var conexao := ENetMultiplayerPeer.new()
 	var erro := conexao.create_server(PORTA, MAXIMO_JOGADORES - 1)
 	if erro != OK:
@@ -82,6 +85,7 @@ func entrar(endereco: String) -> Error:
 
 
 func criar_sala() -> void:
+	bot = -1
 	nova_sala().criar()
 	multiplayer.multiplayer_peer = sala.conexao
 	modo = "host"

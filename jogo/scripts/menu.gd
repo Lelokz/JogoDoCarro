@@ -21,6 +21,7 @@ var endereco := LineEdit.new()
 var codigo := LineEdit.new()
 var aviso := Label.new()
 var opcoes := VBoxContainer.new()
+var escolha_solo := VBoxContainer.new()   # depois do JOGAR SOLO: treino livre ou contra o bot
 var lado := Control.new()          # título + botões (aparece no fim do carregamento)
 var carregando := VBoxContainer.new()
 var barra := ProgressBar.new()
@@ -125,8 +126,12 @@ func montar_lado() -> void:
 	coluna.add_child(espaco)
 	opcoes.add_theme_constant_override("separation", 10)
 	coluna.add_child(opcoes)
+	montar_escolha_solo(coluna)
 
-	var jogar := botao("JOGAR SOLO", func() -> void: Rede.treinar())
+	var jogar := botao("JOGAR SOLO", func() -> void:
+		opcoes.visible = false
+		escolha_solo.visible = true
+		escolha_solo.get_child(1).get_child(1).grab_focus())
 	jogar.add_theme_stylebox_override("normal", Estilo.caixa(Color(0.95, 0.45, 0.1, 0.95), Color(1, 0.8, 0.5, 0.6), 10, 1, 22))
 	jogar.add_theme_stylebox_override("hover", Estilo.caixa(Color(1.0, 0.58, 0.2, 1.0), Color.WHITE, 10, 2, 22))
 	jogar.add_theme_stylebox_override("pressed", Estilo.caixa(Color(0.85, 0.38, 0.08, 1.0), Color.WHITE, 10, 2, 22))
@@ -171,6 +176,30 @@ func montar_lado() -> void:
 	opcoes.add_child(aviso)
 	aviso.text = Rede.aviso
 	Rede.aviso = ""
+
+
+func montar_escolha_solo(coluna: VBoxContainer) -> void:
+	escolha_solo.visible = false
+	escolha_solo.add_theme_constant_override("separation", 10)
+	coluna.add_child(escolha_solo)
+	escolha_solo.add_child(Estilo.rotulo("CONTRA O BOT", 20, Estilo.LARANJA, Estilo.titulo()))
+	var niveis := HBoxContainer.new()
+	niveis.add_theme_constant_override("separation", 8)
+	for i in Bot.NIVEIS.size():
+		var b := botao(Bot.NIVEIS[i].to_upper(), func() -> void: Rede.treinar("res://cenas/arena.tscn", i))
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		niveis.add_child(b)
+	escolha_solo.add_child(niveis)
+	var dica := Estilo.rotulo("1 contra 1, o bot no laranja", 15, Estilo.TEXTO_APAGADO)
+	escolha_solo.add_child(dica)
+	var espaco := Control.new()
+	espaco.custom_minimum_size.y = 6
+	escolha_solo.add_child(espaco)
+	escolha_solo.add_child(botao("TREINO LIVRE (sem adversário)", func() -> void: Rede.treinar()))
+	escolha_solo.add_child(botao("VOLTAR", func() -> void:
+		escolha_solo.visible = false
+		opcoes.visible = true))
 
 
 func botao(texto: String, ao_clicar: Callable) -> Button:

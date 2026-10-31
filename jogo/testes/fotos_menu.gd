@@ -25,6 +25,10 @@ func _process(_delta: float) -> bool:
 		foto("m1_menu")
 	if pronto_em > 0 and quadro == pronto_em + 200:
 		foto("m2_menu_girou")
+		menu.opcoes.visible = false
+		menu.escolha_solo.visible = true
+	if pronto_em > 0 and quadro == pronto_em + 215:
+		foto("m3_jogar_solo")
 		return true
 	return quadro > 3000
 

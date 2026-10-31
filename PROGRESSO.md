@@ -36,7 +36,14 @@ Tu aprovou a ordem e foi dormir; cada passo foi publicado e o print foi pro teu 
   carro uns 3 m/s pra cima. Corrigido. Os números de todos os testes antigos ficaram iguais, e no teste
   de rede a maior diferença entre o carro do amigo e o host caiu de 17 cm pra 1,2 cm.
 - `./tirar_fotos.sh PASTA` também fotografa o menu, a pausa, as opções e uma explosão.
-- **Pendente:** pulo duplo (o teu amigo explica amanhã o que é o "fixo"); bot com fácil/médio/difícil.
+- **Bot (1ª versão):** JOGAR SOLO → contra o bot FÁCIL / MÉDIO / DIFÍCIL (1 contra 1, bot no laranja) ou
+  TREINO LIVRE. O bot aperta os mesmos comandos que um jogador (nada de física especial).
+  Fácil: reage atrasado, sem boost, corre atrás da bola. Médio: prevê a bola, chega por trás dela pra
+  chutar pro gol, volta pra defender quando a bola está no campo dele, boost em reta, pula em bola alta.
+  Difícil: previsão melhor, mais boost, mortal na bola. Teste: `teste_bot.gd` (joga 90 s sozinho em cada
+  nível; `-- --rastrear 1` mostra o caminho do médio). Primeira versão marcou 1 a 3 gols em 90 s contra
+  um carro parado e não fez gol contra; consertei ele orbitando a bola e voltando pra defesa à toa.
+- **Pendente:** pulo duplo (o teu amigo explica amanhã o que é o "fixo"); o que o amigo achar do bot.
 
 ## 31/10/2026: visual novo (carro, bola e estádio)
 - Pedido teu: "deixar o jogo parecendo de profissional". **Só a aparência mudou:** as caixas de colisão

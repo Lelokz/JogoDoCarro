@@ -14,6 +14,7 @@ const FOTOS := [
 	["6_gol", Vector3(9, 4, 30), Vector3(0, 3, 50)],
 	["7_arquibancada", Vector3(-10, 3, 5), Vector3(40, 14, 20)],
 	["1b_hud_rapido", "hud", null],
+	["1d_bot_carro_frente", Vector3(-1.2, 0.45, -1.6), Vector3(0, 0.1, 0)],
 	["1c_explosao_gol", "explosao", null],
 	["8_pausa", "pausa", null],
 	["9_opcoes", "opcoes", null],
@@ -28,6 +29,7 @@ var camera := Camera3D.new()
 func _initialize() -> void:
 	for argumento in OS.get_cmdline_user_args():
 		pasta = argumento
+	root.get_node("Rede").bot = 1   # com o bot (médio) no laranja
 	root.add_child(load("res://cenas/arena.tscn").instantiate())
 	camera.fov = 70.0
 	root.add_child(camera)
@@ -69,7 +71,7 @@ func _process(_delta: float) -> bool:
 	elif f[1] == null:
 		root.get_node("Arena/Camera").make_current()
 	elif f[0].contains("carro_"):
-		var carro: Node3D = root.get_node("Arena/Carro")
+		var carro: Node3D = root.get_node("Arena/Carro_bot" if f[0].contains("bot") else "Arena/Carro")
 		camera.make_current()
 		camera.look_at_from_position(carro.global_transform * f[1], carro.global_transform * f[2])
 	else:
